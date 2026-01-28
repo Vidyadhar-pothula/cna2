@@ -97,71 +97,75 @@ def extract_entities_ollama(pdf_path):
         "equipment": [], "parameters": [], "variables": [], "conditions": [], "actions": []
     }
     
-    from prompts import UNIFIED_EXTRACTION_PROMPT
-    unified_prompt_template = UNIFIED_EXTRACTION_PROMPT
-
+    # SINGLE-PASS BALANCED EXTRACTION
+    from prompts import BALANCED_SYSTEM_PROMPT
+    
     llm = Ollama(model=TINYLLAMA_MODEL, temperature=0.0)
 
     for i, chunk in enumerate(chunks):
         print(f"--- Chunk {i+1}/{len(chunks)} ---")
-        prompt = unified_prompt_template.format(chunk=chunk)
+        
+        # Construct the Prompt (System + Chunk)
+        # LangChain just concatenates, no rephrasing
+        final_prompt = f"""{BALANCED_SYSTEM_PROMPT}\n\nDATA TO EXTRACT:\n{chunk}"""
 
-        # ===== STEP 1: VERIFY LLM INPUT TEXT =====
-        print(f"===== LLM INPUT START (Unified) =====")
-        print(chunk)
-        print("===== LLM INPUT END =====")
-        # ==========================================
-
-        try:
-            raw_output = llm.invoke(prompt)
-            print("--- Raw Logic Output ---")
-            print(raw_output)
-            parsed = extract_json_from_text(raw_output)
-
-            if parsed and isinstance(parsed, dict):
-                # Iterate through all categories in the single response
-                for category in ["equipment", "parameters", "variables", "conditions", "actions"]:
-                    items = parsed.get(category, [])
-                    if isinstance(items, list):
-                        for item in items:
-                            if isinstance(item, dict):
-                                # VALIDATION
-                                name = (item.get("name") or "").strip()
-                                desc = (item.get("description") or "").strip()
-                                doc_id = (item.get("id") or "").strip()
-
-                                # 1. Check for placeholders
-                                bad_words = [
-                                    "<exact", "document name", "physical role", "parameter name", 
-                                    "<SV01", "<C1", "<tag",
-                                    "variable name", "short condition", "action name", "exact action", 
-                                    "<verbatim", "verbatim text", "verbatim meaning", "exact logic", 
-                                    "<verbatim trigger>", "<verbatim action>", "<exact response>",
-                                    "<short label>", "<trigger logic>", "<system response>", "<measurement>",
-                                    "<value or purpose>", "<role>", "..."
-                                ]
-                                if any(bw in name for bw in bad_words) or any(bw in desc for bw in bad_words):
-                                    continue # Skip placeholder
-
-                                # 2. Check for empty
-                                if not name or len(name) < 2:
-                                    continue
-
-                                item_data = {
-                                    "name": name,
-                                    "description": desc
-                                }
-                                # Add ID only if category supports it and it exists
-                                if category in ["equipment", "parameters", "variables"]:
-                                    if doc_id and not any(bw in doc_id for bw in bad_words):
+        print(f"   -> Invoking Phi-3 (Balanced Pass)...")
+        
+        # RETRY LOOP (Max 1 retry for Anti-Collapse)
+        max_retries = 1
+        attempt = 0
+        valid_extraction = False
+        
+        while attempt <= max_retries:
+            try:
+                raw_output = llm.invoke(final_prompt)
+                parsed = extract_json_from_text(raw_output)
+                
+                if parsed and isinstance(parsed, dict):
+                    # Check for "Collapse" (Skewed to Conditions only)
+                    eq_count = len(parsed.get('equipment', []))
+                    param_count = len(parsed.get('parameters', []))
+                    cond_count = len(parsed.get('conditions', []))
+                    
+                    # Heuristic: If we have conditions but NO equipment/parameters, it might be collapsed.
+                    if cond_count > 0 and eq_count == 0 and param_count == 0 and attempt < max_retries:
+                        print(f"   WARNING: Detected potential 'Conditions-Only' collapse. Retrying (Attempt {attempt+1}/{max_retries})...")
+                        attempt += 1
+                        continue # Retry with same prompt
+                    
+                    # If we got here, result is either balanced or we ran out of retries
+                    valid_extraction = True
+                    
+                    # Merge into aggregated data
+                    for category in ["equipment", "parameters", "variables", "conditions", "actions"]:
+                        items = parsed.get(category, [])
+                        if isinstance(items, list):
+                            for item in items:
+                                if isinstance(item, dict):
+                                    # Standard Validation
+                                    name = (item.get("name") or "").strip()
+                                    desc = (item.get("description") or "").strip()
+                                    doc_id = (item.get("id") or "").strip()
+                                    
+                                    if not name or len(name) < 2: continue
+                                    
+                                    item_data = {"name": name, "description": desc}
+                                    if category in ["equipment", "parameters", "variables"]:
                                         item_data["id"] = doc_id
-                                    else:
-                                        item_data["id"] = "" 
-
-                                aggregated_data[category].append(item_data)
-        except Exception as e:
-            print(f"    Error in unified pass: {e}")
-            continue
+                                        
+                                    aggregated_data[category].append(item_data)
+                    break # Exit retry loop
+                else:
+                    # JSON parse failed
+                    print(f"   Warning: valid JSON not found in attempt {attempt}.")
+                    attempt += 1
+                    
+            except Exception as e:
+                print(f"    Error in extraction attempt {attempt}: {e}")
+                attempt += 1
+                
+        if not valid_extraction:
+            print("   Failed to extract valid data for chunk after retries.")
 
     # 4. POST-PROCESSING (Deduplicate ONLY - NO AUTO ID)
     final_normalized = {}

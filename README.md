@@ -13,7 +13,7 @@ A local-first document intelligence pipeline for extracting structured entities 
 
 -   **100% Local Privacy**: No data leaves your machine.
 -   **Split Processing**: Automatically separates text logic from P&ID diagrams.
--   **Single-Pass Extraction**: Optimized prompts extract all 5 categories in one efficient LLM call per chunk.
+-   **Balanced Single-Pass Architecture**: Uses a neutral, agentic controller to orchestrate Phi-3 for complete, unbiased entity extraction in one pass.
 -   **Strict Schema**: Enforces output suitable for ISA-88 documentation usage.
 
 ## Installation
