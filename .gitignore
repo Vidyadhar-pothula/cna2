@@ -5,3 +5,8 @@ __pycache__/
 ml_prototype/temp_upload.pdf
 ml_prototype/output.json
 *.log
+
+uploads/
+processed/
+test_output/
+*.pdf

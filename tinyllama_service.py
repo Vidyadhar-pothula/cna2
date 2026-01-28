@@ -48,8 +48,18 @@ def extract_entities_ollama(pdf_path):
         from pypdf import PdfReader
         reader = PdfReader(pdf_path)
         text_content = ""
-        for page in reader.pages:
-            text_content += page.extract_text() + "\n"
+        for i, page in enumerate(reader.pages):
+            page_text = page.extract_text()
+            if i == 0:
+                 print("===== STEP 4: VERIFY PDF LOADER OUTPUT (Page 1) =====")
+                 print(page_text)
+                 print("=====================================================")
+            text_content += page_text + "\n"
+            
+        if not text_content.strip():
+            print("CRITICAL ERROR: PDF Text extraction returned empty string!")
+            return {"error": "PDF text extraction failed (empty)"}
+            
     except Exception as e:
         return {"error": f"PDF Reading Error: {str(e)}"}
 
@@ -87,186 +97,113 @@ def extract_entities_ollama(pdf_path):
         "equipment": [], "parameters": [], "variables": [], "conditions": [], "actions": []
     }
     
-    # Define the 5 Passes (With ID Extraction where applicable)
-    passes = [
-        {
-            "category": "equipment",
-            "json_key": "equipment",
-            "prompt_template": """
+    # Single Unified Prompt Template
+    unified_prompt_template = """
     Context:
     \"\"\"
     {chunk}
     \"\"\"
 
     Task:
-    Extract EQUIPMENT from the context.
-    Definition: Physical assets (vessels, valves, pumps, sensors).
-    
-    RULES:
-    1. EXTRACT REAL IDs: If the text says "SV01 Surge Vessel", extract id="SV01", name="Surge Vessel".
-    2. NO INVENTED IDs: If no ID exists, leave "id" empty. Do NOT create "E-1".
-    3. Use exact names from text.
-    4. Controlled Interpretation: "Valve opens" -> Equipment="Valve".
+    Extract ALL of the following control system entities from the context into a single JSON object.
 
-    Output Format (JSON):
+    Definitions & Rules:
+
+    1. EQUIPMENT (Physical Assets):
+       - Vessels, valves, pumps, sensors.
+       - EXTRACT REAL IDs: If text says "Pump P-101", extract id="P-101", name="Pump".
+       - NO INVENTED IDs.
+
+    2. PARAMETERS (Configurable Values):
+       - Setpoints, limits, constants (C1, C2), timers, deadbands.
+       - EXTRACT REAL IDs (e.g., "Parameter P-101").
+
+    3. VARIABLES (Measured Values):
+       - pH, Flow, Weight, Conductivity which CHANGE during operation.
+       - NO Constants.
+
+    4. CONDITIONS (Triggers):
+       - Causes/Logic (IF, WHEN, ABOVE, BELOW).
+       - Capture only the TRIGGER.
+
+    5. ACTIONS (Responses):
+       - System effects (opens, closes, adds, alarms).
+       - Capture only the RESPONSE.
+
+    CRITICAL: Extract ONLY from the "Context" above. Do NOT include examples from these definitions.
+
+    Output JSON Format:
     {{
-      "equipment": [ {{ "id": "<SV01 or empty>", "name": "<document Name>", "description": "<role>" }} ]
+      "equipment": [ {{ "id": "...", "name": "...", "description": "..." }} ],
+      "parameters": [ {{ "id": "...", "name": "...", "description": "..." }} ],
+      "variables":  [ {{ "id": "...", "name": "...", "description": "..." }} ],
+      "conditions": [ {{ "name": "...", "description": "..." }} ],
+      "actions":    [ {{ "name": "...", "description": "..." }} ]
     }}
     """
-        },
-        {
-            "category": "parameters",
-            "json_key": "parameters",
-            "prompt_template": """
-    Context:
-    \"\"\"
-    {chunk}
-    \"\"\"
 
-    Task:
-    Extract PARAMETERS from the context.
-    Definition: Configurable values (Setpoints, Limits, Constants).
-    
-    RULES:
-    1. EXTRACT REAL IDs: If text says "Parameter P-101", extract id="P-101".
-    2. Polynomial constants (C1, C2) -> id="C1", name="Polynomial Constant".
-    3. NO INVENTED IDs.
-    4. "Mixing time", "Deadbands", "Tolerances" are PARAMETERS.
-
-    Output Format (JSON):
-    {{
-      "parameters": [ {{ "id": "<C1 or empty>", "name": "<document Name>", "description": "<value/purpose>" }} ]
-    }}
-    """
-        },
-        {
-            "category": "variables",
-            "json_key": "variables",
-            "prompt_template": """
-    Context:
-    \"\"\"
-    {chunk}
-    \"\"\"
-
-    Task:
-    Extract VARIABLES from the context.
-    Definition: Measured or calculated process values (pH, Flow, Weight).
-    
-    RULES:
-    1. EXTRACT REAL IDs if present (e.g., tags).
-    2. EXCLUDE C1, C2 (Parameters).
-    3. NO INVENTED IDs.
-
-    Output Format (JSON):
-    {{
-      "variables": [ {{ "id": "<tag or empty>", "name": "<document Name>", "description": "<measurement>" }} ]
-    }}
-    """
-        },
-        {
-            "category": "conditions",
-            "json_key": "conditions",
-            "prompt_template": """
-    Context:
-    \"\"\"
-    {chunk}
-    \"\"\"
-
-    Task:
-    Extract CONDITIONS (Triggers).
-    Definition: Logic that triggers an action (IF, WHEN, ABOVE, BELOW).
-    
-    RULES:
-    1. Capture the TRIGGER part only (e.g., "If Level > 80%").
-    2. Do not include action.
-    3. NO IDs for Conditions.
-
-    Output Format (JSON):
-    {{
-      "conditions": [ {{ "name": "<short label>", "description": "<trigger logic>" }} ]
-    }}
-    """
-        },
-        {
-            "category": "actions",
-            "json_key": "actions",
-            "prompt_template": """
-    Context:
-    \"\"\"
-    {chunk}
-    \"\"\"
-
-    Task:
-    Extract ACTIONS (Responses).
-    Definition: What the system DOES (opens, closes, adds, alarms).
-    
-    RULES:
-    1. Capture the RESPONSE only.
-    2. Do not include condition.
-    3. NO IDs for Actions.
-
-    Output Format (JSON):
-    {{
-      "actions": [ {{ "name": "<action name>", "description": "<system response>" }} ]
-    }}
-    """
-        }
-    ]
-
-    llm = Ollama(model=TINYLLAMA_MODEL, temperature=0.1)
+    llm = Ollama(model=TINYLLAMA_MODEL, temperature=0.0)
 
     for i, chunk in enumerate(chunks):
         print(f"--- Chunk {i+1}/{len(chunks)} ---")
-        
-        for p in passes:
-            prompt = p["prompt_template"].format(chunk=chunk)
-            
-            try:
-                raw_output = llm.invoke(prompt)
-                parsed = extract_json_from_text(raw_output)
-                
-                if parsed and isinstance(parsed, dict):
-                     items = parsed.get(p["json_key"], [])
-                     if isinstance(items, list):
-                         for item in items:
-                             if isinstance(item, dict):
-                                 # VALIDATION
-                                 name = item.get("name", "").strip()
-                                 desc = item.get("description", "").strip()
-                                 doc_id = item.get("id", "").strip()
-                                 
-                                 # 1. Check for placeholders
-                                 bad_words = [
-                                     "<exact", "document name", "physical role", "parameter name", 
-                                     "<SV01", "<C1", "<tag",
-                                     "variable name", "short condition", "action name", "exact action", 
-                                     "<verbatim", "verbatim text", "verbatim meaning", "exact logic", 
-                                     "<verbatim trigger>", "<verbatim action>", "<exact response>",
-                                     "<short label>", "<trigger logic>", "<system response>", "<measurement>",
-                                     "<value or purpose>", "<role>"
-                                 ]
-                                 if any(bw.lower() in name.lower() for bw in bad_words) or any(bw.lower() in desc.lower() for bw in bad_words):
-                                     continue # Skip placeholder
-                                     
-                                 # 2. Check for empty
-                                 if not name or len(name) < 2:
-                                     continue
-                                     
-                                 item_data = {
-                                     "name": name,
-                                     "description": desc
-                                 }
-                                 # Add ID only if category supports it and it exists
-                                 if p["category"] in ["equipment", "parameters", "variables"]:
-                                     if doc_id and not any(bw.lower() in doc_id.lower() for bw in bad_words):
-                                         item_data["id"] = doc_id
-                                     else:
-                                         item_data["id"] = "" # Explicit empty string as requested
+        prompt = unified_prompt_template.format(chunk=chunk)
 
-                                 aggregated_data[p["category"]].append(item_data)
-            except Exception as e:
-                print(f"    Error in pass {p['category']}: {e}")
-                continue
+        # ===== STEP 1: VERIFY LLM INPUT TEXT =====
+        print(f"===== LLM INPUT START (Unified) =====")
+        print(chunk)
+        print("===== LLM INPUT END =====")
+        # ==========================================
+
+        try:
+            raw_output = llm.invoke(prompt)
+            print("--- Raw Logic Output ---")
+            print(raw_output)
+            parsed = extract_json_from_text(raw_output)
+
+            if parsed and isinstance(parsed, dict):
+                # Iterate through all categories in the single response
+                for category in ["equipment", "parameters", "variables", "conditions", "actions"]:
+                    items = parsed.get(category, [])
+                    if isinstance(items, list):
+                        for item in items:
+                            if isinstance(item, dict):
+                                # VALIDATION
+                                name = (item.get("name") or "").strip()
+                                desc = (item.get("description") or "").strip()
+                                doc_id = (item.get("id") or "").strip()
+
+                                # 1. Check for placeholders
+                                bad_words = [
+                                    "<exact", "document name", "physical role", "parameter name", 
+                                    "<SV01", "<C1", "<tag",
+                                    "variable name", "short condition", "action name", "exact action", 
+                                    "<verbatim", "verbatim text", "verbatim meaning", "exact logic", 
+                                    "<verbatim trigger>", "<verbatim action>", "<exact response>",
+                                    "<short label>", "<trigger logic>", "<system response>", "<measurement>",
+                                    "<value or purpose>", "<role>", "..."
+                                ]
+                                if any(bw in name for bw in bad_words) or any(bw in desc for bw in bad_words):
+                                    continue # Skip placeholder
+
+                                # 2. Check for empty
+                                if not name or len(name) < 2:
+                                    continue
+
+                                item_data = {
+                                    "name": name,
+                                    "description": desc
+                                }
+                                # Add ID only if category supports it and it exists
+                                if category in ["equipment", "parameters", "variables"]:
+                                    if doc_id and not any(bw in doc_id for bw in bad_words):
+                                        item_data["id"] = doc_id
+                                    else:
+                                        item_data["id"] = "" 
+
+                                aggregated_data[category].append(item_data)
+        except Exception as e:
+            print(f"    Error in unified pass: {e}")
+            continue
 
     # 4. POST-PROCESSING (Deduplicate ONLY - NO AUTO ID)
     final_normalized = {}
