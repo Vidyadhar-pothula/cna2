@@ -1,0 +1,12 @@
+torch
+torchvision
+transformers
+pillow
+pdf2image
+numpy
+flask
+flask-cors
+google-generativeai==0.8.6
+pypdf==6.4.1
+python-dotenv==1.2.1
+json_repair

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF Splitter Platform</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='static/style.css') }}?v={{ range(1, 10000) | random }}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <h1>PDF Splitter</h1>
+      <p>Separate Text and Images with precision.</p>
+      <nav style="margin-top: 10px;">
+        <a href="/analysis" style="color: var(--primary-color); text-decoration: none; font-weight: 500;">&rarr; Go to
+          Data Flow Simulation</a>
+      </nav>
+    </header>
+
+    <main>
+      {% with messages = get_flashed_messages() %}
+      {% if messages %}
+      <div class="flash-messages">
+        {% for message in messages %}
+        <div class="alert">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endwith %}
+
+      {% if not result %}
+      <div class="upload-card">
+        <form action="/upload_split" method="post" enctype="multipart/form-data" id="upload-form">
+          <div class="drop-zone" id="drop-zone">
+            <span class="drop-zone__prompt">Drag & Drop PDF here or Click to Upload</span>
+            <input type="file" name="file" class="drop-zone__input" accept=".pdf">
+          </div>
+          <button type="submit" class="btn-primary">Split Document</button>
+        </form>
+      </div>
+      {% else %}
+      <div class="result-card">
+        <h2>Success!</h2>
+        <p>Your document has been split.</p>
+        <div class="download-actions">
+          <a href="{{ url_for('download_file_split', session_id=session_id, filename=text_filename) }}"
+            class="btn-download text">
+            Download Text-Only PDF
+          </a>
+          <a href="{{ url_for('download_file_split', session_id=session_id, filename=images_filename) }}"
+            class="btn-download image">
+            Download Images-Only PDF
+          </a>
+        </div>
+
+        {% if extraction_result %}
+        <div class="extraction-results">
+          <h2>Extracted Entities (TinyLlama - Local)</h2>
+          {% if extraction_result.error %}
+          <div class="alert error">Error during extraction: {{ extraction_result.error }}</div>
+          {% else %}
+          <div class="tables-container">
+            {% for category in ['equipment', 'parameters', 'variables', 'conditions', 'actions'] %}
+            <div class="table-section">
+              <h3>{{ category|capitalize }}</h3>
+              {% if extraction_result[category] %}
+              <table class="entity-table"
+                style="width: 100%; border-collapse: collapse; border: 1px solid black; margin-top: 10px;">
+                <thead>
+                  <tr style="background-color: #f2f2f2;">
+                    <th style="border: 1px solid black; padding: 8px; text-align: left;">ID</th>
+                    <th style="border: 1px solid black; padding: 8px; text-align: left;">Name</th>
+                    <th style="border: 1px solid black; padding: 8px; text-align: left;">Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item in extraction_result[category] %}
+                  <tr>
+                    <td style="border: 1px solid black; padding: 8px;">{{ item.id }}</td>
+                    <td style="border: 1px solid black; padding: 8px;">{{ item.name }}</td>
+                    <td style="border: 1px solid black; padding: 8px;">{{ item.description }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+              {% else %}
+              <p class="empty-msg">No {{ category }} found.</p>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+
+          <details style="margin-top: 2rem; background: #f5f5f5; padding: 1rem; border-radius: 8px;">
+            <summary>Debug: Raw JSON Output</summary>
+            <pre
+              style="white-space: pre-wrap; word-break: break-all; font-size: 0.8rem;">{{ extraction_result | tojson(indent=2) }}</pre>
+          </details>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        <a href="/splitter" class="btn-secondary" style="margin-top: 20px; display: inline-block;">Process Another
+          File</a>
+      </div>
+      {% endif %}
+    </main>
+  </div>
+
+  <div id="loading-overlay"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 1000; justify-content: center; align-items: center; flex-direction: column;">
+    <div class="spinner"
+      style="border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite;">
+    </div>
+    <p style="margin-top: 20px; font-size: 1.2rem; font-weight: 500; color: var(--text-color);">Processing Document...
+    </p>
+    <p style="color: #666; font-size: 0.9rem;">This uses your local AI and may take up to 60 seconds.</p>
+  </div>
+
+  <style>
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+
+  <script>
+    const form = document.querySelector('form');
+    const overlay = document.getElementById('loading-overlay');
+
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        overlay.style.display = 'flex';
+      });
+    }
+
+    document.querySelectorAll(".drop-zone__input").forEach((inputElement) => {
+      const dropZoneElement = inputElement.closest(".drop-zone");
+
+      dropZoneElement.addEventListener("click", (e) => {
+        inputElement.click();
+      });
+
+      inputElement.addEventListener("change", (e) => {
+        if (inputElement.files.length) {
+          updateThumbnail(dropZoneElement, inputElement.files[0]);
+        }
+      });
+
+      dropZoneElement.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropZoneElement.classList.add("drop-zone--over");
+      });
+
+      ["dragleave", "dragend"].forEach((type) => {
+        dropZoneElement.addEventListener(type, (e) => {
+          dropZoneElement.classList.remove("drop-zone--over");
+        });
+      });
+
+      dropZoneElement.addEventListener("drop", (e) => {
+        e.preventDefault();
+
+        if (e.dataTransfer.files.length) {
+          inputElement.files = e.dataTransfer.files;
+          updateThumbnail(dropZoneElement, e.dataTransfer.files[0]);
+        }
+
+        dropZoneElement.classList.remove("drop-zone--over");
+      });
+    });
+
+    function updateThumbnail(dropZoneElement, file) {
+      let thumbnailElement = dropZoneElement.querySelector(".drop-zone__thumb");
+
+      // First time - remove the prompt
+      if (dropZoneElement.querySelector(".drop-zone__prompt")) {
+        dropZoneElement.querySelector(".drop-zone__prompt").remove();
+      }
+
+      // First time - there is no thumbnail element, so lets create it
+      if (!thumbnailElement) {
+        thumbnailElement = document.createElement("div");
+        thumbnailElement.classList.add("drop-zone__thumb");
+        dropZoneElement.appendChild(thumbnailElement);
+      }
+
+      thumbnailElement.dataset.label = file.name;
+    }
+  </script>
+</body>
+
+</html>

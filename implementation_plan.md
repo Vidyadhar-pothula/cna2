@@ -1,0 +1,47 @@
+# PDF Splitting Implementation Plan
+
+## Goal Description
+Split a source PDF into two separate PDF files:
+1. `text_only.pdf`: Contains all extracted text, preserving layout as much as possible, with no images.
+2. `images_only.pdf`: Contains all extracted images, preserving layout, with no text.
+
+## Proposed Changes
+
+## Proposed Changes
+
+### [Web Application]
+#### [NEW] [app.py](file:///Users/vidyadhar/.gemini/antigravity/brain/c29a6940-ccd7-46dc-a7fb-df5f0fa55bc4/app.py)
+- Flask application.
+- Routes:
+  - `/`: Renders upload form.
+  - `/upload`: Handles file POST, runs logic, returns download links.
+  - `/download/<filename>`: Serves processed files.
+
+#### [NEW] [templates/index.html](file:///Users/vidyadhar/.gemini/antigravity/brain/c29a6940-ccd7-46dc-a7fb-df5f0fa55bc4/templates/index.html)
+- Modern, clean, "platform" aesthetic.
+- Drag and drop file upload zone.
+- "Split Document" button.
+- Results section showing "Download Text-Only" and "Download Images-Only".
+
+#### [NEW] [static/style.css](file:///Users/vidyadhar/.gemini/antigravity/brain/c29a6940-ccd7-46dc-a7fb-df5f0fa55bc4/static/style.css)
+- Premium look and feel (Vanila CSS).
+- Glassmorphism effects.
+- Responsive layout.
+
+### [Data Processing]
+#### [MODIFY] [split_pdf.py](file:///Users/vidyadhar/.gemini/antigravity/brain/c29a6940-ccd7-46dc-a7fb-df5f0fa55bc4/split_pdf.py)
+- Refactor `split_pdf` function to return paths of generated files instead of printing.
+- Ensure it works with the Flask upload folder structure.
+
+## Verification Plan
+
+### Automated Tests
+- None (Visual/Manual verification prioritized for UI).
+
+### Manual Verification
+1. Start Flask app: `python app.py`.
+2. Open `http://127.0.0.1:5000` in browser.
+3. Upload a sample PDF.
+4. Click "Split".
+5. Verify two download buttons appear.
+6. Download and inspect both files.

@@ -1,0 +1,5 @@
+{
+  "artifactType": "ARTIFACT_TYPE_IMPLEMENTATION_PLAN",
+  "summary": "Plan to split PDF into text-only and images-only files using PyMuPDF.",
+  "updatedAt": "2026-01-07T18:27:39.449833Z"
+}

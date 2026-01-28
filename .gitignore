@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.venv/
+.DS_Store
+ml_prototype/temp_upload.pdf
+ml_prototype/output.json
+*.log

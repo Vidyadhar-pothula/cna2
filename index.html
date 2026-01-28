@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LayoutLMv3 Data Flow Simulation</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h1>LayoutLMv3 Data Flow Simulation</h1>
+                <a href="/"
+                    style="color: #fff; text-decoration: none; font-size: 0.9rem; padding: 0.5rem 1rem; background: rgba(255,255,255,0.1); border-radius: 4px;">&larr;
+                    Back to Splitter</a>
+            </div>
+            <div class="controls">
+                <button id="prevBtn" disabled>Previous Phase</button>
+                <span id="phaseIndicator">Phase 1: Input Configuration</span>
+                <button id="nextBtn">Next Phase</button>
+            </div>
+        </header>
+
+        <main id="simulation-stage">
+            <!-- Phase 1: Input Configuration -->
+            <section id="phase-1" class="phase active">
+                <div class="phase-content">
+                    <div class="input-doc-container">
+                        <h2>Phase 1: Input Configuration</h2>
+                        <p class="phase-desc">Enter the Control Narrative and the Authoritative Symbol List.</p>
+                        <div class="input-controls">
+                            <div class="input-group">
+                                <label>Input 1: User Symbol List (JSON)</label>
+                                <textarea id="input-symbols"
+                                    rows="3">{"SUSV": "V-110", "Incoming Flow Rate": "FT-201.IN", "Tolerance": "P-TOL"}</textarea>
+                            </div>
+                            <div class="input-group">
+                                <label>Input 2: Control Narrative (PDF)</label>
+                                <input type="file" id="input-pdf" accept=".pdf" />
+                                <p class="small-text">Upload a PDF to extract entities using LayoutLMv3.</p>
+                            </div>
+                            <button id="simulateBtn">Upload & Initialize Simulation</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Phase 2: Text Processing & NER -->
+            <section id="phase-2" class="phase">
+                <div class="phase-content">
+                    <h2>Phase 2: Text Processing & NER</h2>
+                    <p class="phase-desc">Digitizing text and classifying domain-specific entities.</p>
+                    <div class="ner-container" id="ner-output">
+                        <!-- NER Tags injected here -->
+                    </div>
+                    <div class="legend">
+                        <span class="tag equipment">EQUIPMENT</span>
+                        <span class="tag variable">VARIABLE</span>
+                        <span class="tag condition">CONDITION</span>
+                        <span class="tag parameter">PARAMETER</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Phase 3: Constraint Tally -->
+            <section id="phase-3" class="phase">
+                <div class="phase-content">
+                    <h2>Phase 3: Constraint Tally & KG Enforcement</h2>
+                    <p class="phase-desc">Tallying extracted entities against the User Symbol List.</p>
+                    <div class="tally-board" id="tally-board">
+                        <!-- Tally Items injected here -->
+                    </div>
+                    <div class="legend">
+                        <span class="tag match-success">MATCH FOUND</span>
+                        <span class="tag match-infer">INFERRED</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Phase 4: Logic Translation -->
+            <section id="phase-4" class="phase">
+                <div class="phase-content">
+                    <h2>Phase 4: Logic Translation (GenAI)</h2>
+                    <p class="phase-desc">Translating logic using ONLY tallied symbols.</p>
+                    <div class="genai-process">
+                        <div class="prompt-box">
+                            <strong>Constraint-Guided Prompt:</strong>
+                            <p>Translate using: V-110, FT-201.IN, FT-201.OUT, V-110.dWT, P-TOL...</p>
+                        </div>
+                        <div class="arrow">⬇️</div>
+                        <div class="response-box">
+                            <strong>Initial Pseudo-code:</strong>
+                            <pre id="initial-code-display"></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Phase 5: Validation & Final Output -->
+            <section id="phase-5" class="phase">
+                <div class="phase-content">
+                    <h2>Phase 5: Validation & Final Output</h2>
+                    <p class="phase-desc">Agentic AI validates constraints and outputs final code.</p>
+
+                    <div class="validation-process">
+                        <div class="check-item" id="check-time">
+                            <span class="status">⏳</span> Checking for Time Constraint...
+                        </div>
+                        <div class="check-item" id="check-syntax">
+                            <span class="status">⏳</span> Checking Syntax...
+                        </div>
+                    </div>
+
+                    <div class="final-output">
+                        <h3>Final Validated Pseudo-code</h3>
+                        <pre><code class="language-json" id="final-code-display"></code></pre>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>
