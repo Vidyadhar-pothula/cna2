@@ -118,11 +118,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Map API data
             extractedEntities = [];
-            if (data.equipment_table) extractedEntities = extractedEntities.concat(data.equipment_table.map(e => ({ phrase: e.name || e.id, type: 'equipment', id: e.id, description: e.description })));
-            if (data.variables_table) extractedEntities = extractedEntities.concat(data.variables_table.map(e => ({ phrase: e.name || e.id, type: 'variable', id: e.id, description: e.description })));
-            if (data.parameters_table) extractedEntities = extractedEntities.concat(data.parameters_table.map(e => ({ phrase: e.name || e.id, type: 'parameter', id: e.id, description: e.description })));
-            if (data.conditions_table) extractedEntities = extractedEntities.concat(data.conditions_table.map(e => ({ phrase: e.name || e.id, type: 'condition', id: e.id, description: e.description })));
-            if (data.actions_table) extractedEntities = extractedEntities.concat(data.actions_table.map(e => ({ phrase: e.name || e.id, type: 'action', id: e.id, description: e.description })));
+            const mapEntity = (e, type) => ({
+                phrase: e.original_phrase || e.name || e.id,
+                type: type,
+                id: e.id,
+                description: e.description
+            });
+
+            if (data.equipment_table) extractedEntities = extractedEntities.concat(data.equipment_table.map(e => mapEntity(e, 'equipment')));
+            if (data.variables_table) extractedEntities = extractedEntities.concat(data.variables_table.map(e => mapEntity(e, 'variable')));
+            if (data.parameters_table) extractedEntities = extractedEntities.concat(data.parameters_table.map(e => mapEntity(e, 'parameter')));
+            if (data.conditions_table) extractedEntities = extractedEntities.concat(data.conditions_table.map(e => mapEntity(e, 'condition')));
+            if (data.actions_table) extractedEntities = extractedEntities.concat(data.actions_table.map(e => mapEntity(e, 'action')));
 
             // Store Unified Control Table
             unifiedControlTable = data.unified_control_table || [];

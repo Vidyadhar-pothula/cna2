@@ -12,30 +12,37 @@ class ExtractionAgent:
         self.llm = llm
 
     def get_prompt(self, chunk: str, global_context: Dict) -> str:
-        return f"""### ROLE: Industrial Controls Engineer. Extract structured entity data.
+        return f"""### ROLE: Senior Industrial Controls Engineer & Logic Expert.
+Extract ALL technical entities from the provided Industrial Control Narrative text into structured JSON.
 
-### TRANSFORMATION RULES:
-1. Conditions: Convert narrative to symbolic logic (e.g. "when pressure > 10bar").
-2. Symbols allowed: > < >= <= == !=
-3. IDs: Preserve original. If missing, generate EQP-###, VAR-###, etc.
-4. Accuracy: Only extract what is explicitly stated. Do NOT summarize.
-5. EXHAUSTIVE EXTRACTION: Extract EVERY piece of equipment, variable, parameter, condition, and action.
-6. DESCRIPTIONS: Provide a detailed, meaningful description for every entity extracted. "No description" is NOT allowed.
+### EXTRACTION CATEGORIES:
+1. equipment: All physical hardware (Pumps, Valves, Tanks, Sensors, PLCs).
+2. variables: Process values (Level, Pressure, Flow) and Status/Commands.
+3. parameters: Setpoints, limits, thresholds, and numerical constants.
+4. conditions: Logical triggers and if-statements (e.g., "Level > 80%").
+5. actions: Control outputs and resulting behaviors (e.g., "Open SV-101").
 
-### 1-SHOT EXAMPLE:
-Input: "If discharge pressure (PT-101) exceeds 12bar, shut down pump P-101."
+### CRITICAL RULES:
+- If a specific ID is mentioned (e.g., PT-101), use it. Otherwise, invent a logical ID (EQP-001, VAR-001, etc.).
+- ORIGINAL PHRASE: Capture the exact text fragment used to identify the entity (e.g., "P-101", "Level", "discharge pressure").
+- DESCRIPTIONS: Provide a rich, professional description for every entity.
+- LOGIC: Convert conditions into symbolic form (>, <, ==).
+- FORMAT: RETURN ONLY THE JSON OBJECT. NO EXPLANATORY TEXT.
+
+### EXTRACTION EXAMPLE:
+Input: "Pump P-101 stops when the discharge pressure PT-101 reaches the high limit of 15bar."
 Output: {{
-  "equipment": [{{ "id": "P-101", "name": "Pump", "description": "High-pressure discharge pump for the main system" }}],
-  "variables": [{{ "id": "PT-101", "name": "Discharge Pressure", "description": "Pressure transmitter monitoring the discharge line" }}],
-  "parameters": [{{ "id": "PAR-001", "name": "12bar", "description": "High-high pressure trip setpoint for pump safety" }}],
-  "conditions": [{{ "id": "CND-001", "name": "PT-101 > 12bar", "description": "Condition where discharge pressure exceeds the safety limit" }}],
-  "actions": [{{ "id": "ACT-001", "name": "P-101.Stop", "description": "Immediate shutdown of pump P-101" }}]
+  "equipment": [{{ "id": "P-101", "name": "Discharge Pump", "description": "Main system discharge pumping unit", "original_phrase": "Pump P-101" }}],
+  "variables": [{{ "id": "PT-101", "name": "Discharge Pressure", "description": "Pressure transmitter on the discharge side of P-101", "original_phrase": "discharge pressure PT-101" }}],
+  "parameters": [{{ "id": "PAR-101", "name": "15bar", "description": "High pressure safety trip setpoint", "original_phrase": "15bar" }}],
+  "conditions": [{{ "id": "CND-101", "name": "PT-101 >= 15bar", "description": "Discharge pressure exceeds safely allowed operational limit", "original_phrase": "discharge pressure PT-101 reaches the high limit of 15bar" }}],
+  "actions": [{{ "id": "ACT-101", "name": "P-101.Stop", "description": "Automatic shutdown of the discharge pump for protection", "original_phrase": "Pump P-101 stops" }}]
 }}
 
 ### INPUT TEXT:
 {chunk}
 
-### RETURN ONLY VALID JSON:
+### STRICT JSON OUTPUT:
 """
 
     def extract(self, chunk: str, global_context: Dict) -> Dict[str, List[Dict]]:
@@ -45,6 +52,7 @@ Output: {{
             # Removed stop_sequences that often truncate JSON if the model uses code blocks
             response = self.llm.invoke(full_prompt)
             resp_text = response.strip()
+            print(f"DEBUG: LLM RAW RESPONSE: {resp_text[:200]}...")
             
             # Robust JSON recovery: Find the first { and last }
             json_match = re.search(r'(\{.*\})', resp_text, re.DOTALL)
@@ -66,8 +74,20 @@ Output: {{
                     for key in required_keys:
                         if key not in data: data[key] = []
                     return data
-                except json.JSONDecodeError:
-                    print(f"Extraction JSON Decode error for chunk. Response snippet: {resp_text[:100]}...")
+                except json.JSONDecodeError as de:
+                    print(f"Extraction JSON Decode error: {de}")
+                    print(f"DEBUG: FULL RAW RESPONSE STARTING:\n{resp_text}\nDEBUG: FULL RAW RESPONSE ENDING")
+                    # Try a more aggressive cleanup if simple one failed
+                    try:
+                        # Remove anything before first { and after last }
+                        start_idx = resp_text.find('{')
+                        end_idx = resp_text.rfind('}')
+                        if start_idx != -1 and end_idx != -1:
+                            json_str = resp_text[start_idx:end_idx+1]
+                            data = json.loads(json_str)
+                            return data
+                    except:
+                        pass
             
             return {k: [] for k in ["equipment", "variables", "parameters", "conditions", "actions"]}
         except Exception as e:

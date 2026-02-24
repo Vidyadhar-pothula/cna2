@@ -22,43 +22,32 @@ class GlobalContextBuilder:
         if not text:
             return chunks
         
+        # Increase chunk size for small documents to ensure full context
+        chunk_size = 10000
         start = 0
         while start < len(text):
-            end = min(start + self.chunk_size, len(text))
+            end = min(start + chunk_size, len(text))
             chunks.append(text[start:end])
             if end == len(text):
                 break
-            start += self.chunk_size - self.overlap
+            start += chunk_size - self.overlap
         return chunks
 
     def extract_local_entities(self, chunk: str) -> Dict:
         """
-        Fast regex-based discovery to avoid LLM latency in Phase 1.
+        Keyword-based semantic hints. Helps LLM focus on key areas.
         """
-        # Patterns for: Equipment (e.g. P-101, T-501, VT-201, Pump101, VLV-55)
-        # Improved pattern: Matches Letter-Number, LetterNumber, and common industrial labels
-        tag_pattern = r'\b(?:[A-Z]{1,4}[-_\s]?\d{1,6}[A-Z]{0,2})\b|\b(?:VLV|PMP|TNK|HE|COMP|GEN|MTR)-?\d{1,4}\b'
-        tags = set(re.findall(tag_pattern, chunk))
+        # We use a set of common industrial keywords as 'semantic anchors'
+        anchors = ["Pump", "Tank", "Valve", "Level", "Pressure", "Flow", "Temperature", "Open", "Close", "Stop", "Start"]
+        found_anchors = [a for a in anchors if a.lower() in chunk.lower()]
         
-        # Patterns for: Variables (Common Engineering Keywords)
-        var_keywords = [
-            "Level", "Pressure", "Temperature", "Flow", "Vibration", "Speed", 
-            "Position", "Speed", "Frequency", "Current", "Voltage", "Power",
-            "State", "Status", "Command", "Feedback", "Alarm", "Trip", "Limit"
-        ]
-        vars_found = set()
-        for kw in var_keywords:
-            if re.search(fr'\b{kw}\b', chunk, re.I):
-                vars_found.add(kw)
-        
-        # Pattern for: Potential Setpoints/Parameters
-        param_pattern = r'\b\d+(?:\.\d+)?\s?(?:%|Hz|bar|m|kg|s|rpm|degC|V|A|kW)\b'
-        params = set(re.findall(param_pattern, chunk))
+        # We also look for potential Tags (Alpha-Numeric patterns) but treat them as generic hints
+        tag_hints = re.findall(r'\b[A-Z]{1,4}[-_\d]{1,6}\b', chunk)
 
         return {
-            "equipment": list(tags),
-            "variables": list(vars_found),
-            "parameters": list(params),
+            "equipment": list(set(found_anchors + tag_hints)),
+            "variables": [],
+            "parameters": [],
             "section": None
         }
 

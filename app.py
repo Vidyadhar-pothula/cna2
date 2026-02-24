@@ -104,7 +104,8 @@ def normalize_extraction_result(raw_result):
                 normalized[table_key].append({
                     "id": item.get("id", f"{raw_key[:3].upper()}-{idx+1:02}"),
                     "name": item.get("name") or item.get("condition") or item.get("action") or "Unnamed",
-                    "description": item.get("description") or item.get("value") or "No description"
+                    "description": item.get("description") or item.get("value") or "No description",
+                    "original_phrase": item.get("original_phrase", "")
                 })
     return normalized
 

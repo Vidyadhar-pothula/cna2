@@ -45,14 +45,6 @@ class PipelineManager:
         print("--- PHASE 4: Semantic Matching & Stitching ---")
         start_time = time.time()
         
-        # Ensure regex fallback items are at least present in normalized_data
-        # This handles cases where LLM found NOTHING but regex found items
-        summary = self.context_builder.get_summary()
-        if not normalized_data.get("equipment") and summary.get("equipment"):
-            normalized_data["equipment"] = [{"id": e, "name": e, "description": "Discovered via Regex"} for e in summary["equipment"]]
-        if not normalized_data.get("variables") and summary.get("variables"):
-            normalized_data["variables"] = [{"id": v, "name": v, "description": "Discovered via Regex"} for v in summary["variables"]]
-
         unified_table = self.stitcher.stitch(normalized_data)
         stitching_time = time.time() - start_time
         print(f"  -> Stitching took {stitching_time:.2f}s")

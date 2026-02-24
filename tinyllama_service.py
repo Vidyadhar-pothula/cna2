@@ -59,24 +59,8 @@ def extract_entities_ollama(pdf_path):
         manager = PipelineManager(llm)
         result = manager.run_pipeline(text)
         
-        # AUGMENTATION STRATEGY: Combine LLM results with Regex results
-        # This ensures we get the 80% reasoning + the 20% reliable tag discovery
-        summary = manager.context_builder.get_summary()
-        
-        # Merge Regex Equipment
-        existing_eq_ids = {str(e.get("id", "")).upper() for e in result.get("equipment_table", [])}
-        for eq_id in summary.get("equipment", []):
-            if eq_id.upper() not in existing_eq_ids:
-                result["equipment_table"].append({"id": eq_id, "name": eq_id, "description": "Reliably identified via scan"})
-        
-        # Merge Regex Variables
-        existing_var_ids = {str(v.get("id", "")).upper() for v in result.get("variables_table", [])}
-        for var_id in summary.get("variables", []):
-            if var_id.upper() not in existing_var_ids:
-                result["variables_table"].append({"id": var_id, "name": var_id, "description": "Reliably identified via scan"})
-
         counts = {k: len(result.get(k, [])) for k in ["equipment_table", "variables_table", "parameters_table", "conditions_table", "actions_table"]}
-        print(f"  -> Pipeline finished. Augmented Results: {counts}")
+        print(f"  -> Pipeline finished. Results: {counts}")
         
         return result
     except Exception as e:
