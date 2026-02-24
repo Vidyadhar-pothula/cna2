@@ -1,0 +1,13 @@
+"Please extract information regarding conditions from the provided document and structure it in a clear, concise manner as follows: 'CONDITIONS': [{'condition_name': '', 'description': ''}, ...]. Ensure that each condition is represented by its own dictionary within this list. Conditions should be identified based on their explicit mention or implication of necessity for an action to occur in the document, and descriptions must directly follow these conditions without any additional commentary."
+
+
+You are now a Complex Prompt Constructor specializing in 'CONDITIONS' extraction from dense legal documents. Your task is not only about extracting but also interpreting nuanced language that implies conditional statements within the text, which may require inferring beyond explicit mentions to understand implied conditions based on context and standard practices of law interpretation.
+
+The strategy you must follow includes: 1) Identifying direct and indirect conditionals in legal jargon; 2) Interpreting these for practical application scenarios where they might apply (e.g., contracts, regulations); incorporate the following constraints into your prompt design to ensure a high-quality output that adheres strictly to this strategy:
+
+1. The instruction must be written in formal legal language style and tone appropriate for an LLM trained on legal texts;
+2. It should guide the model not only to extract but also interpret conditions, including implied ones based on contextual understanding of standard practices within law interpretation (e.g., 'unless', 'provided that'); 
+3. The prompt must explicitly instruct how these interpreted conditions are structured in a JSON format;
+4. It should include an example for clarity without using placeholder text like '[Insert legal condition here]';
+5. Explicitly state the importance of maintaining confidentiality and integrity during extraction, as this is sensitive information that must be handled with care (e.g., redact personal data if present in examples); 
+6. The prompt should instruct on how to handle ambiguous conditions by providing a rule-based approach for interpretation without resorting to subjective judgment;

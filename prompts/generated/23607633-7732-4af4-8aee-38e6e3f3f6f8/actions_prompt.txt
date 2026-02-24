@@ -1,0 +1,52 @@
+
+To create a high-quality, detailed instruction for extracting information from an article about "The Impacts of Climate Change on Marine Ecosystem Services" that focuses specifically on how climate change affects coral reef ecosystem services and their role in coastal protection. The prompt should be structured as follows:
+
+1. Begin with a clear, concise title for the article based on its content about "Coral Reef Ecology." 
+
+2. Include at least three key points that highlight how climate change impacts coral reef ecosystem services and their importance in coastal protection without using any scientific jargon or technical terms, making it accessible to a general audience while maintaining accuracy of information based on the document provided: "Climate Change Impacts Coral Reef Ecology" by Dr. Jane Goodall (2019).
+
+3. The prompt should be structured as an engaging narrative that emphasizes human-induced climate change'degradation of coral reef ecosystem services and its implications for coastal communities, particularly in the Pacific Islands region where these habitats are crucial to local livelihoods (e.g., fishing).
+
+4. Incorporate a call-to-action that encourages readers to support conservation efforts without using any direct quotes from Dr. Jane Goodall or referencing her directly; instead, paraphrase the essence of what she might say based on known facts about coral reefs and climate change impacts as presented in this document: "Climate Change Impacts Coral Reef Ecology" by John Smith (2018).
+
+5. The prompt must be written at a 9th-grade reading level, avoiding complex scientific terminology while ensuring it is informative and persuasive to encourage public engagement in coral reef conservation efforts without using the words 'biodiversity,' 'ecosystems,' or 'marine' within its text.
+
+6. The prompt must not exceed 300 words, be formatted as a blog post with an attention-grabbing introduction and conclusion that includes at least two rhetorical questions to engage the reader emotionally while maintaining scientific accuracy based on Dr. Jane Goodall's findings in "Climate Change Impacts Coral Reef Ecology" by John Smith (2018).
+
+7. The prompt must not contain any direct quotes from external sources, but rather synthesize the information into a narrative that is easy to understand and compelling for non-experts without using scientific jargon or complex terminology: "Climate Change Impacts Coral Reef Ecology" by John Smith (2018).
+
+
+Document: 
+
+The article discusses the intricate relationship between climate change, coral reef ecosystem services and their role in protecting coastlines. It highlights how rising sea temperatures lead to increased bleaching events that weaken these natural barriers against storm surges and erosion but also touches on socio-economic impacts due to the loss of fisheries, which many Pacific Island communities rely upon for their livelihoods.
+
+
+Document: 
+
+Climate Change Impacts Coral Reef Ecology by John Smith (2018) - Abstract
+
+Abstract: This article examines how climate change is affecting coral reef ecosystem services, particularly in the Pacific Islands where these underwater habitats provide essential protection against coastal erosion and storm surges. The study reveals that as sea temperatures rise due to global warming, bleaching events become more frequent, leading to a decline in fish populations which are vital for local economies dependent on reef-based tourism and food resources.
+
+
+Document: 
+
+Climate Change Impacts Coral Reef Ecology by John Smith (2018) - Introduction
+
+Introduction: The Pacific Islands' coral ecosystem is a cornerstone of local economies, offering not only biodiversity but also coastline protection and food security. However, climate change poses an existential threat to these delicate environments through increased sea temperatures causing widesp0read bleaching events that disrupt the balance within reef systems (Smith et al., 2018).
+
+
+Document: 
+
+Climate Change Impacts Coral Reef Ecology by John Smith (2018) - Methodology and Findings
+
+Methodology & Results: We conducted a longitudinal study over five years, examining the effects of rising sea temperatures on coral reef health. Our findings indicate that bleaching events have doubled in frequency since 2015 with significant implications for fish populations crucial to local communities' livelihoods and coastline protection (Smith et al., 2018).
+
+
+Document: 
+
+Climate Change Impacts Coral Reef Ecology by John Smith (2018) - Conclusion & Discussion
+
+Conclusion & Discussion: The study concludes that urgent action is needed to mitigate the effects of climate change on coral reef ecosystem services, which are vital for both environmental and economic reasons. Without intervention, these natural barriers could be lost forever (Smith et al., 2018).
+
+
+Document: "Climate Change Impacts Coral Reef Ecology" by John Smith - Keywords: coral reef ecosystem services; climate change impact on marine life.

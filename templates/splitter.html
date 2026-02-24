@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ORION | Control Narrative Analysis</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <!-- Rockwell is a system font or requires external add if not standard, sticking to font-stack in CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+  <!-- SCENE 1-5: ORION INTRO LAYOUT -->
+  <div id="intro-layer" class="intro-layer">
+    <div class="orion-container">
+      <!-- Power Symbol (The 'O') -->
+      <div class="power-symbol">⏻</div>
+      <!-- The rest of the word -->
+      <div class="orion-text">RION</div>
+    </div>
+
+    <div class="scroll-indicator">
+      <span class="scroll-msg">Scroll to Initialize</span>
+      <div class="line"></div>
+    </div>
+  </div>
+
+  <!-- MAIN APP CONTENT -->
+  <div id="main-app" class="main-app">
+
+    <!-- OBJECTIVE SECTION -->
+    <section class="objective-section">
+      <div class="content-wrapper">
+        <h2 class="section-heading">OUR OBJECTIVE</h2>
+        <div class="heading-line"></div>
+        <p class="objective-desc">
+          ORION is designed to analyze Control Narrative documents and convert their content into structured engineering
+          insight.
+          After a Control Narrative PDF is uploaded, the system identifies the different equipment described in the
+          document,
+          understands their associated logic and conditions, and generates clear, structured pseudocode that represents
+          the
+          intended control behavior for each identified element.
+        </p>
+      </div>
+    </section>
+
+    <!-- UPLOAD SECTION -->
+    <section class="upload-section">
+
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages() %}
+      {% if messages %}
+      <div class="flash-messages">
+        {% for message in messages %}
+        <div class="msg">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endwith %}
+
+      <!-- Upload/Results Card -->
+      <!-- Form always visible -->
+      <form action="/upload_split" method="post" enctype="multipart/form-data" class="premium-upload-form"
+        id="upload-form">
+        <div class="upload-box" id="drop-area">
+          <div class="icon">📄</div>
+          <h3>Drag & Drop PDF</h3>
+          <p>or click to browse</p>
+          <input type="file" name="file" id="file-input" accept=".pdf" hidden>
+        </div>
+        <button type="submit" class="btn-primary" id="analyze-btn">Start Analysis</button>
+      </form>
+
+      <!-- PROCESSING JOURNEY SECTION (Embedded System) -->
+      <section id="processing-journey" class="processing-section" style="display: none;">
+        <div class="processing-inner">
+
+          <h2 class="processing-title">
+            Document Processing Journey
+            <span class="processing-divider"></span>
+          </h2>
+
+          <!-- Timeline (Navigation Only) -->
+          <div class="timeline">
+            <div class="timeline-line"></div>
+
+            <div class="timeline-nodes">
+
+              <!-- Node 1: Active -->
+              <div class="node active" id="node-1" onclick="switchStage(1)">
+                <span class="label active">Document Split</span>
+              </div>
+
+              <!-- Node 2: Inactive -->
+              <div class="node inactive" id="node-2" onclick="switchStage(2)">
+                <span class="label">Logic Extraction</span>
+              </div>
+
+              <!-- Node 3: Inactive -->
+              <div class="node inactive" id="node-3" onclick="switchStage(3)">
+                <span class="label">Unified Control Table</span>
+              </div>
+
+              <!-- Node 4: Inactive -->
+              <div class="node inactive" id="node-4" onclick="switchStage(4)">
+                <span class="label">Pseudocode</span>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- CONTENT AREA (State Machine Container) -->
+          <div class="journey-content-area" style="position: relative; min-height: 200px; margin-top: 20px;">
+
+            <!-- STAGE 1 CONTENT: SPLIT DOWNLOADS -->
+            <div id="stage-1-content" class="stage-panel visible">
+              <!-- Outputs -->
+              <div class="stage-output" id="downloads-container">
+                <a href="#" id="link-text" class="output-label" target="_blank">Text Source</a>
+                <span class="divider">|</span>
+                <a href="#" id="link-image" class="output-label" target="_blank">Image Source</a>
+              </div>
+
+              <!-- Workflow Control -->
+              <div class="workflow-controls">
+                <button class="workflow-btn" onclick="simulateProgress(2)">Next: Generate Tables &rarr;</button>
+              </div>
+            </div>
+
+            <!-- STAGE 2 CONTENT: ENTITY TABLES -->
+            <div id="stage-2-content" class="stage-panel">
+              <div id="tables-container" class="tables-wrapper">
+                <!-- Tables will be injected here -->
+                <div class="empty-state">Waiting for data...</div>
+              </div>
+
+              <!-- Workflow Control -->
+              <div class="workflow-controls">
+                <button class="workflow-btn" onclick="simulateProgress(3)">Next: Unified Control Logic &rarr;</button>
+              </div>
+            </div>
+
+            <!-- STAGE 3 CONTENT: UNIFIED CONTROL TABLE -->
+            <div id="stage-3-content" class="stage-panel">
+              <div id="unified-table-container" class="tables-wrapper">
+                <div class="empty-state">Waiting for Unified Control Table...</div>
+              </div>
+              <div class="workflow-controls">
+                <button class="workflow-btn" onclick="simulateProgress(4)">Next: Generate Pseudocode &rarr;</button>
+              </div>
+            </div>
+
+            <!-- STAGE 4 CONTENT: PSEUDOCODE (Hidden) -->
+            <div id="stage-4-content" class="stage-panel">
+              <div id="pseudocode-container" class="stage-output">
+                <div class="empty-state">Waiting for Pseudocode Generation...</div>
+              </div>
+              <div class="workflow-controls">
+                <span style="color: #009E4D; font-size: 0.9rem;">Process Complete</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- DEBUG JSON VIEWER (Secondary, Optional) -->
+          <div class="debug-section" style="margin-top: 60px; width: 100%; max-width: 800px;">
+            <div class="debug-toggle" onclick="toggleDebug()">
+              <span id="debug-icon">▶</span> View Raw Extraction JSON
+            </div>
+            <div id="debug-panel" class="debug-panel">
+              <pre id="debug-json">No extraction data available</pre>
+            </div>
+          </div>
+
+          <div style="margin-top: 48px;">
+            <button onclick="resetView()" class="btn-text"
+              style="color: #666; font-size: 0.85rem; background:none; border:none; cursor:pointer; padding:0; opacity:0.6; transition:opacity 0.2s;">
+              Process Another Document
+            </button>
+          </div>
+
+        </div>
+      </section>
+
+    </section>
+  </div>
+
+  <!-- LOADERS (Optional, maybe specific to upload?) -->
+  <div id="loader" class="loader-overlay">
+    <div class="spinner"></div>
+    <p id="loader-text">Initializing...</p>
+  </div>
+
+  <script>
+    // --- STATE MACHINE LOGIC ---
+    let currentMaxProgress = 1; // Highest stage unlocked
+    let currentActiveStage = 1; // Stage currently being viewed
+
+    function switchStage(stageNum) {
+      if (stageNum > currentMaxProgress) return; // Prevent jumping ahead
+
+      // 1. Update Active State
+      currentActiveStage = stageNum;
+
+      // 2. Hide All Panels
+      document.querySelectorAll('.stage-panel').forEach(el => {
+        el.classList.remove('visible');
+        el.style.display = 'none'; // Ensure strictly hidden
+      });
+
+      // 3. Show Selected Panel
+      const targetPanel = document.getElementById(`stage-${stageNum}-content`);
+      if (targetPanel) {
+        targetPanel.style.display = 'block';
+        // Small delay to allow display:block to render before opacity transition
+        setTimeout(() => {
+          targetPanel.classList.add('visible');
+        }, 10);
+      }
+
+      // 4. Update Node Styling
+      for (let i = 1; i <= 4; i++) {
+        const node = document.getElementById(`node-${i}`);
+        const label = node.querySelector('.label');
+
+        // Reset
+        node.classList.remove('active', 'inactive', 'completed');
+        label.classList.remove('active');
+        node.style.pointerEvents = 'none'; // Default lock
+
+        if (i === currentActiveStage) {
+          // CURRENTLY VIEWING
+          node.classList.add('active');
+          label.classList.add('active');
+          node.style.pointerEvents = 'auto'; // Clickable (to refresh?)
+        } else if (i < currentActiveStage) {
+          // PAST (Completed)
+          node.classList.add('inactive'); // Visually inactive but clickable? 
+          // User requested: "Clicking a completed dot moves back"
+          // So we need a 'completed' specific style or just reuse inactive visual but allow click.
+          // Let's use 'inactive' visual but enable pointer.
+          // Wait, prompted: "Active Stage: Green. Previous: Previous dots remain visible... Clicking navigates back"
+          // So previous should look like "Inactive" (grey outline) but be clickable.
+          node.style.pointerEvents = 'auto';
+        } else {
+          // FUTURE (Locked)
+          node.classList.add('inactive');
+        }
+
+        // Ensure Max Level access
+        if (i <= currentMaxProgress) {
+          node.style.pointerEvents = 'auto';
+        }
+      }
+    }
+
+    // DEBUG VIEWER LOGIC
+    function toggleDebug() {
+      const panel = document.getElementById('debug-panel');
+      const icon = document.getElementById('debug-icon');
+      panel.classList.toggle('expanded');
+
+      if (panel.classList.contains('expanded')) {
+        icon.textContent = "▼";
+      } else {
+        icon.textContent = "▶";
+      }
+    }
+
+    function updateDebugData(data) {
+      const pre = document.getElementById('debug-json');
+      if (!data) {
+        pre.textContent = "No extraction data available";
+        return;
+      }
+      pre.textContent = JSON.stringify(data, null, 2);
+    }
+
+    // --- TABLE RENDERING (Backend Normalized) ---
+    function renderTable(categoryName, items) {
+      if (!items || items.length === 0) return '';
+
+      let rows = '';
+      items.forEach((norm) => {
+        rows += `
+                    <tr>
+                        <td class="col-id">${norm.id}</td>
+                        <td class="col-name">${norm.name}</td>
+                        <td class="col-desc">${norm.description}</td>
+                    </tr>
+                 `;
+      });
+
+      // Pretty Title
+      const titleMap = {
+        'equipment_table': 'Equipment',
+        'parameters_table': 'Parameters',
+        'variables_table': 'Variables',
+        'conditions_table': 'Conditions',
+        'actions_table': 'Actions'
+      };
+      const title = titleMap[categoryName] || categoryName;
+
+      return `
+            <div class="entity-table-container">
+                <h3 class="table-title">${title} Table</h3>
+                <table class="entity-table">
+                    <thead>
+                        <tr>
+                            <th width="15%">ID</th>
+                            <th width="35%">Name/Condition</th>
+                            <th width="50%">Description/Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    // NEW: Render Unified Table
+    function renderUnifiedTable(data) {
+      console.log("Rendering Unified Table...", data);
+      const container = document.getElementById('unified-table-container');
+      if (!data || data.length === 0) {
+        container.innerHTML = '<div class="empty-state">No unified logic data generated.</div>';
+        return;
+      }
+
+      let rows = '';
+      data.forEach(row => {
+        // Handle lists vs strings (safe access)
+        const eq = row.equipment || '';
+        const vr = Array.isArray(row.variable) ? row.variable.join(', ') : (row.variable || '');
+        const pm = Array.isArray(row.parameter) ? row.parameter.join(', ') : (row.parameter || '');
+        const cn = Array.isArray(row.condition) ? row.condition.join(', ') : (row.condition || '');
+        const ac = Array.isArray(row.action) ? row.action.join(', ') : (row.action || '');
+
+        rows += `
+                <tr>
+                    <td>${eq}</td>
+                    <td>${vr}</td>
+                    <td>${pm}</td>
+                    <td>${cn}</td>
+                    <td>${ac}</td>
+                </tr>
+            `;
+      });
+
+      const html = `
+            <div class="entity-table-container">
+                <h3 class="table-title">Unified Control Table</h3>
+                <table class="entity-table">
+                    <thead>
+                        <tr>
+                            <th width="15%">Equipment</th>
+                            <th width="15%">Variable</th>
+                            <th width="15%">Parameter</th>
+                            <th width="25%">Condition</th>
+                            <th width="30%">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                </table>
+            </div>
+        `;
+      container.innerHTML = html;
+    }
+
+    function renderPseudocode(codeText) {
+      console.log("Rendering Pseudocode...");
+      const container = document.getElementById('pseudocode-container');
+      if (!codeText) {
+        container.innerHTML = '<div class="empty-state">No pseudocode generated.</div>';
+        return;
+      }
+      
+      // Simple HTML escape logic
+      const safeCode = codeText
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+      container.innerHTML = `
+        <div class="code-viewer-container" style="text-align: left; width: 100%;">
+            <h3 class="table-title">IEC 61131-3 Structured Text</h3>
+            <pre style="background: #f8f9fa; color: #333; padding: 15px; border-radius: 6px; font-family: 'Consolas', monospace; font-size: 0.9rem; white-space: pre-wrap; border: 1px solid #e9ecef; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);">${safeCode}</pre>
+        </div>
+      `;
+    }
+
+    function renderAllTables() {
+      console.log("Executing renderAllTables...");
+      const container = document.getElementById('tables-container');
+
+      if (!window.normalizedTables) {
+        console.warn("renderAllTables: No normalizedTables found.");
+        container.innerHTML = '<div class="empty-state">No normalized data found. Please upload a PDF.</div>';
+        return;
+      }
+
+      console.log("renderAllTables: Data found, rendering...");
+      const categories = ['equipment_table', 'parameters_table', 'variables_table', 'conditions_table', 'actions_table'];
+      let fullHtml = '';
+      let hasData = false;
+
+      categories.forEach(cat => {
+        const items = window.normalizedTables[cat];
+        if (items && items.length > 0) {
+          fullHtml += renderTable(cat, items);
+          hasData = true;
+        }
+      });
+
+      if (!hasData) {
+        container.innerHTML = '<div class="empty-state">Extraction returned no entities to display.</div>';
+      } else {
+        container.innerHTML = fullHtml;
+      }
+    }
+
+    // Test Helper (Simulate Progress)
+    function simulateProgress(toStage) {
+      if (toStage > currentMaxProgress) {
+        currentMaxProgress = toStage;
+      }
+      // Simulate JSON Data when reaching Stage 2 roughly
+      if (toStage === 2) {
+        // Check for Data
+        if (!window.normalizedTables) {
+          // If we really want to simulate without upload, we'd need mock normalized data.
+          // But for now, let's just warn if empty.
+          // Or we could trigger renderAllTables if data exists.
+        } else {
+          renderAllTables();
+        }
+      }
+      if (toStage === 3) {
+        // Render Unified Table if available
+        if (window.normalizedTables && window.normalizedTables.unified_control_table) {
+          renderUnifiedTable(window.normalizedTables.unified_control_table);
+        }
+      }
+      if (toStage === 4) {
+        // Render Pseudocode
+        if (window.normalizedTables && window.normalizedTables.pseudocode) {
+          renderPseudocode(window.normalizedTables.pseudocode);
+        }
+      }
+      switchStage(toStage);
+    }
+
+    // --- UPLOAD & SPA LOGIC ---
+    const dropArea = document.getElementById('drop-area');
+    const fileInput = document.getElementById('file-input');
+    const form = document.getElementById('upload-form');
+    // UPDATE: Target the new section ID
+    const journeySection = document.getElementById('processing-journey');
+
+    // Links
+    const linkText = document.getElementById('link-text');
+    const linkImage = document.getElementById('link-image');
+
+    if (dropArea) {
+      dropArea.addEventListener('click', () => fileInput.click());
+
+      dropArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropArea.classList.add('active');
+      });
+
+      dropArea.addEventListener('dragleave', () => {
+        dropArea.classList.remove('active');
+      });
+
+      dropArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropArea.classList.remove('active');
+        if (e.dataTransfer.files.length) {
+          fileInput.files = e.dataTransfer.files;
+          dropArea.querySelector('p').textContent = e.dataTransfer.files[0].name;
+        }
+      });
+
+      fileInput.addEventListener('change', () => {
+        if (fileInput.files.length) {
+          dropArea.querySelector('p').textContent = fileInput.files[0].name;
+        }
+      });
+
+      // AJAX SUBMISSION
+      if (form) {
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+
+          if (!fileInput.files.length) {
+            alert("Please select a file first.");
+            return;
+          }
+
+          // 1. Reveal Journey & Scroll Immediately
+          journeySection.style.display = 'block';
+          journeySection.scrollIntoView({ behavior: 'smooth' });
+
+          setTimeout(() => {
+            journeySection.classList.add('visible');
+          }, 300);
+
+          // 2. Prepare Data
+          const formData = new FormData(form);
+
+          try {
+            // 3. Send Initial Request
+            const response = await fetch('/upload_split?ajax=1', {
+              method: 'POST',
+              body: formData,
+              headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+              // Start Polling
+              console.log("Upload successful. Session ID:", data.session_id);
+              updateStatusUI("Processing Document...");
+              pollStatus(data.session_id);
+            } else {
+              alert("Error: " + (data.error || "Unknown"));
+              journeySection.style.display = 'none';
+              journeySection.classList.remove('visible');
+            }
+
+          } catch (err) {
+            console.error(err);
+            alert("Upload Failed.");
+            journeySection.style.display = 'none';
+            journeySection.classList.remove('visible');
+          }
+        });
+      }
+
+      function updateStatusUI(msg) {
+        // You might want to update a specific element to show status
+        const loaderText = document.getElementById('loader-text'); // If using loader
+        if (loaderText) loaderText.textContent = msg;
+
+        // Or update the empty state in the table container
+        const container = document.getElementById('tables-container');
+        if (container) container.innerHTML = `<div class="empty-state"><div class="spinner" style="margin:0 auto 10px auto;"></div>${msg}</div>`;
+      }
+
+      function pollStatus(sessionId) {
+        setTimeout(async () => {
+          try {
+            const res = await fetch(`/api/job_status/${sessionId}`);
+            const job = await res.json();
+
+            if (job.status === 'processing') {
+              console.log("Job still processing...");
+              updateStatusUI("Analyzing Narrative... (This may take a few minutes)");
+              pollStatus(sessionId); // Recurse
+            } else if (job.status === 'completed') {
+              console.log("Job Completed!");
+              handleJobCompletion(job);
+            } else if (job.status === 'failed') {
+              alert("Processing Failed: " + job.error);
+              updateStatusUI("Processing Failed.");
+            } else {
+              console.warn("Unknown status:", job.status);
+              pollStatus(sessionId);
+            }
+          } catch (e) {
+            console.error("Polling error:", e);
+            // Retry on network error?
+            pollStatus(sessionId);
+          }
+        }, 3000); // Poll every 3 seconds
+      }
+
+      function handleJobCompletion(data) {
+        // Update Links
+        const linkText = document.getElementById('link-text');
+        const linkImage = document.getElementById('link-image');
+
+        linkText.href = `/download_split/${data.session_id}/${data.text_filename}`;
+        linkImage.href = `/download_split/${data.session_id}/${data.images_filename}`;
+
+        // Global Storage
+        window.extractionResult = data.extraction_result;
+        window.normalizedTables = data.normalized_tables;
+
+        // Render
+        renderAllTables();
+        if (window.normalizedTables && window.normalizedTables.unified_control_table) {
+          renderUnifiedTable(window.normalizedTables.unified_control_table);
+        }
+        if (window.normalizedTables && window.normalizedTables.pseudocode) {
+          renderPseudocode(window.normalizedTables.pseudocode);
+        }
+
+        // Debug
+        if (window.extractionResult) {
+          updateDebugData(window.extractionResult);
+        }
+      }
+    }
+
+    function resetView() {
+      journeySection.classList.remove('visible');
+      setTimeout(() => {
+        journeySection.style.display = 'none';
+        form.reset();
+        dropArea.querySelector('p').textContent = "or click to browse";
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 500);
+    }
+    const introLayer = document.getElementById('intro-layer');
+    const orionContainer = document.querySelector('.orion-container');
+    const mainApp = document.getElementById('main-app');
+
+    // Initialize: Ensure we are at top on reload to see intro
+    if (window.scrollY < 100) {
+      window.scrollTo(0, 0);
+    }
+
+    window.addEventListener('scroll', () => {
+      const scrollY = window.scrollY;
+      const height = window.innerHeight;
+
+      // Calculate progress (0 to 1) over the first 60vh
+      let progress = Math.min(scrollY / (height * 0.6), 1);
+
+      if (progress >= 0) { // Should trigger immediately
+        // 1. Logo Scale Down (<10%)
+        let scale = 1 - (progress * 0.1);
+        if (orionContainer) orionContainer.style.transform = `scale(${scale})`;
+
+        // 2. Opacity Fade
+        if (introLayer) introLayer.style.opacity = Math.max(0, 1 - progress * 1.5); // Fade slightly faster
+
+        // 3. Pointer Events
+        if (progress > 0.8) {
+          introLayer.style.pointerEvents = 'none';
+        } else {
+          introLayer.style.pointerEvents = 'auto'; // Block clicks while visible
+        }
+      }
+    });
+
+    // --- ANIMATION OBSERVER ---
+    const observerOptions = {
+      root: null,
+      rootMargin: '0px',
+      threshold: 0.3 // Trigger when 30% visible
+    };
+
+    const observer = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target); // Run once
+        }
+      });
+    }, observerOptions);
+
+    const objectiveSection = document.querySelector('.objective-section');
+    if (objectiveSection) {
+      observer.observe(objectiveSection);
+    }
+  </script>
+</body>
+
+</html>

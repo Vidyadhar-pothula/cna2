@@ -1,0 +1,2 @@
+"Please extract information related to variables from the provided document and structure it in a clear, concise manner using standard entities as reference points for your data collection process. Once extracted, format this information into JSON with an explicit schema that includes 'variable_name', 'data_type', 'scope' (local or global), and 'initialization_value'. Ensure each variable is represented by its own object within the array to maintain a clean structure."
+

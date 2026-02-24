@@ -1,0 +1,10 @@
+"Please extract parameters related to a hypothetical machine learning algorithm's performance metrics, such as accuracy, precision, recall, and F1-score from an academic paper abstract provided below: 'In this study, we introduce Adaptive Gradient Boosting (AGB), which outperforms traditional gradient boosting methods in terms of predictive accuracy. Our experiments demonstrate that AGB achieves a 95% accuracy rate with precision and recall values at 87% and 82%, respectively.' Present the extracted parameters as JSON, adhering to this structure:
+
+{
+    'accuracy': '', // Extracted value for predictive accuracy of Adaptive Gradient Boosting (AGB) from text.
+    'precision': '', // Extracted value for precision rate associated with AGB's performance metrics in the abstract provided above.
+    'recall': '',   // Extracted value for recall rate linked to AGB's reported results within the same context of the paper extract.
+    'f1_score': ''  // Calculate and provide this metric based on precision and recall values, assuming a balanced dataset where F1-score is given by: (2 * Precision * Recall) / (Precision + Recall). Ensure that all extracted numerical data are represented as floating point numbers with two decimal places.
+}
+
+The JSON should be formatted correctly and contain no placeholder text, ensuring a clear extraction of the performance metrics directly from the provided abstract."

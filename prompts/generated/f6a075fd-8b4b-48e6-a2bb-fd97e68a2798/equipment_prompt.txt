@@ -1,0 +1,7 @@
+"To extract equipment entities relevant to pharmaceutical manufacturing, identify and list all nouns and proper noun phrases that refer specifically to physical devices or machinery used in this context. Examples of such terms include 'surge vessel', 'pH meter', 'conductivity sensor', etc., which are often mentioned alongside equipment names within the text provided for analysis. The extracted entities should be formatted as a JSON object with each piece of equipment listed under its own key, following this structure:
+
+{
+  "equipment": ["surge vessel", "pH meter", ...]
+}
+
+Ensure that your extraction is accurate and adheres strictly to the provided strategy."

@@ -1,0 +1,15 @@
+
+To extract information about a specific aspect from an article on "The Impacts of Climate Change" by Dr. Jane Goodall, focusing soleenerly on its effects in urban areas and excluding any mention or reference to rural environments:
+
+{
+
+    'prompt': {
+
+        'title' : 'Extract the key points from an article discussing how climate change is impacting biodiversity within metropolitan ecosystems, specifically focusing on its effects in urban areas. Exclude any references or mentions of rural environments and do not include general information about global warming.'
+
+    }
+
+} 
+
+
+## Instruction MUCH MORE DIFFICULT (Difficulty Level: More Constraints)

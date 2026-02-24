@@ -1,0 +1,33 @@
+# PDF Splitting Implementation Plan
+
+## Goal Description
+Split a source PDF into two separate PDF files:
+1. `text_only.pdf`: Contains all extracted text, preserving layout as much as possible, with no images.
+2. `images_only.pdf`: Contains all extracted images, preserving layout, with no text.
+
+## Proposed Changes
+
+### [Script]
+#### [NEW] [split_pdf.py](file:///Users/vidyadhar/.gemini/antigravity/brain/c29a6940-ccd7-46dc-a7fb-df5f0fa55bc4/split_pdf.py)
+- A Python script using `pymupdf` (fitz).
+- Function `split_pdf(input_path, output_dir)`:
+  - Opens `input_path`.
+  - **Text-Only Generation**:
+    - Creates a copy of the input PDF (or iterates pages).
+    - Removes all image objects from each page (using `page.get_images()` and `page.delete_image()` or by redacting/cleaning drawings).
+    - Saves as `text_only.pdf`.
+  - **Image-Only Generation**:
+    - Creates a copy of the input PDF.
+    - Removes all text objects (using `page.get_text("dict")` or `page.add_redact_annot()` covering text bboxes and applying redactions).
+    - Saves as `images_only.pdf`.
+
+## Verification Plan
+
+### Automated Tests
+- Run the script on a sample PDF found in the workspace.
+- Check if `text_only.pdf` and `images_only.pdf` exist.
+- (Optional) Programmatically check page counts match source.
+
+### Manual Verification
+- Open `text_only.pdf` and ensure no images are visible, only text is present.
+- Open `images_only.pdf` and ensure no text is visible, only images are present.

@@ -1,0 +1,7 @@
+"To extract equipment names from a document, identify capitalized words or phrases that are immediately followed by numbers which likely represent their specific models (e.g., 'Pump-101'). These should be preceded directly by action verbs related to control procedures such as 'install', 'calibrate', 'service', etc. Extract these entities and present them in a JSON format with the following structure:
+
+{
+  "equipment_names": ["Equipment Name Here", ...] // List of extracted equipment names without model numbers or action verbs attached, just plain text capitalized words/phrases representing each piece of equipment.
+}
+
+Ensure that your extraction process strictly adheres to the provided strategy and does not include any entities outside this context."

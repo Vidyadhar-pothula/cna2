@@ -1,0 +1,70 @@
+"Please extract information about variables used in a given Python code snippet that calculates compound interest, and present it as standardized entities within a structured JSON format. The extracted data should include variable names, their initial values if provided at declaration or assignment, types (inferred from context), scope (global/local to functions), and any annotations regarding purpose or constraints on the variables' usage in comments directly above where they are declared or assigned."
+
+
+```json
+
+{
+
+  "variables": [
+
+    {
+
+      "name": "principal",
+
+      "initial_value": null, // Replace with actual initial value if provided.
+
+      "type": "float",
+
+      "scope": "global" or "local to function 'calculateCompoundInterest'",
+
+      "comment": "The principal amount invested."
+
+    },
+
+    {
+
+      "name": "rate",
+
+      "initial_value": null, // Replace with actual initial value if provided.
+
+      "type": "float",
+
+      "scope": "global" or "local to function 'calculateCompoundInterest'",
+
+      "comment": "The annual interest rate as a decimal."
+
+    },
+
+    {
+
+      "nameiname": "time",
+
+      "initial_value": null, // Replace with actual initial value if provided.
+
+      "type": "int",
+
+      "scope": "global" or "local to function 'calculateCompoundInterest'",
+
+      "comment": "The time in years the money is invested for."
+
+    },
+
+    {
+
+      "nameiname": "compound_interest",
+
+      "initial_value": null, // Replace with actual initial value if provided.
+
+      "type": "float",
+
+      "scope": "local to function 'calculateCompoundInterest'",
+
+      "comment": "The calculated compound interest."
+
+    }
+
+  ]
+
+}
+
+```

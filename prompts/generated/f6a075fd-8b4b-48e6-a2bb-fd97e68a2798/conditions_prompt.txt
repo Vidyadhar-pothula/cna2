@@ -1,0 +1,8 @@
+"Please extract information regarding conditions from the provided document and structure it in a clear, concise manner using standard entities as reference points. Your task is to identify all relevant 'CONDITIONS' that are explicitly stated or can be reasonably inferred within the text. Once identified, present your findings by constructing a JSON object with an array named `conditions`. Each element of this array should represent one condition and must include keys for:
+
+- `condition_id`: A unique identifier starting from 1001 to ensure continuity across multiple documents (e.g., 'CONDITION_1001').
+- `description`: The textual description extracted verbatim, without alteration or paraphrasing.
+- `type`: Categorize each condition as either a precondition ('pre'), postcondition ('post'), requirement ('req'), constraint ('con'), or assumption ('assum') based on its context within the document (e.g., 'pre').
+- `evidence`: A direct quote from the text that supports your categorization of this particular condition, ensuring it is verbatim and unaltered as possible. 
+
+The JSON object should strictly adhere to proper syntax with no additional commentary or interpretation beyond what'nervously extracts conditions directly related to 'CONDITIONS'. Ensure the structure facilitates easy identification of each condition by its unique identifier, description, type, and supporting evidence."

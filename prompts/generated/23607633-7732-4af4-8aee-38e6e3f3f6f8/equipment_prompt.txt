@@ -1,0 +1,13 @@
+"To extract equipment entities related to pH control in pharmaceutical manufacturing, identify and list all nouns and technical terms that refer specifically to devices or systems used for this purpose within the provided narrative text. Focus on machinery explicitly mentioned as part of maintaining desired acidity levels during production processes.
+
+Your task is to parse through the given document and extract only those pieces of equipment directly associated with pH control mechanisms in pharmaceutical manufacturing settings, ensenerating a list that includes their names or types without additional contextual information. 
+
+The extracted data should be formatted as JSON for ease of processing by subsequent systems. Please ensure the following structure is adhered to:
+
+{
+    'equipment_list': [
+        {'name': '', 'type': ''} // Replace empty quotes with actual equipment names and types found in the narrative text, ensuring no additional information beyond what's necessary for identification. 
+    ]
+}
+
+Remember to avoid including any placeholder or generic terms that do not directly pertain to pH control devices within pharmaceutical manufacturing contexts."

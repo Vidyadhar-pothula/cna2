@@ -1,0 +1,12 @@
+
+Extract all instances where a person's name, their role in society (e.g., 'CEO', 'employee'), and any associated actions or titles mentioned directly before them are described within this document: "During an interview with The Guardian newspaper on March 15th, CEO John Doe of Acme Corp announced that he has been appointed as the new Chief Executive Officer (CEO) for a major tech startup. He plans to implement innovative strategies in their marketing department and is expected to bring his extensive experience from previous roles at TechGlobal Inc., where he served as Vice President, into play."
+
+
+Document: 
+
+"During an interview with The Guardian on March 15th, CEO John Doe of Acme Corp. revealed that the company has appointed him to spearhead their new marketing initiatives and drive innovation within the department. His appointment comes after a decade-long career at TechGlobal Inc., where he served as Vice President for five years before joining his current role."
+
+
+Extracted JSON: 
+
+[{"name": "John Doe", "role": "CEO"}, {"name": "TechGlobal Inc.", "title": "Vice President"}]

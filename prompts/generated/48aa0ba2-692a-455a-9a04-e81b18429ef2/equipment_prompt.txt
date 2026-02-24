@@ -1,0 +1,7 @@
+"To extract equipment entities, identify nouns that are typically associated with machinery or tools used in industrial processes and appear near task-related phrases such as 'starting', 'stopping', or 'monitoring'. Additionally, look for these terms when they co-occur with parameters (e.g., temperature settings) or variables within the text. The extracted equipment names should be formatted into a JSON object where each piece of equipment is listed under its own key as an array value:
+
+{
+  'equipment': [<list_of_extracted_equipment>]
+}
+
+Ensure that all identified nouns are relevant to the industrial context and not common household items or generic terms. Exclude any equipment names mentioned in a non-operational capacity, such as when discussing maintenance issues."
