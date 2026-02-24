@@ -19,16 +19,17 @@ class ExtractionAgent:
 2. Symbols allowed: > < >= <= == !=
 3. IDs: Preserve original. If missing, generate EQP-###, VAR-###, etc.
 4. Accuracy: Only extract what is explicitly stated. Do NOT summarize.
-5. EXHAUSTIVE EXTRACTION: You MUST extract EVERY piece of equipment, variable, parameter, condition, and action present in the text. Missing entities is UNACCEPTABLE.
+5. EXHAUSTIVE EXTRACTION: Extract EVERY piece of equipment, variable, parameter, condition, and action.
+6. DESCRIPTIONS: Provide a detailed, meaningful description for every entity extracted. "No description" is NOT allowed.
 
 ### 1-SHOT EXAMPLE:
 Input: "If discharge pressure (PT-101) exceeds 12bar, shut down pump P-101."
 Output: {{
-  "equipment": [{{"id": "P-101", "name": "Pump", "description": "Discharge pump"}}],
-  "variables": [{{"id": "PT-101", "name": "Discharge Pressure", "description": "Pressure sensor"}}],
-  "parameters": [{{"id": "PAR-001", "name": "12bar", "description": "High pressure limit"}}],
-  "conditions": [{{"id": "CND-001", "name": "PT-101 > 12bar", "description": "Pressure exceeds trip"}}],
-  "actions": [{{"id": "ACT-001", "name": "P-101.Stop", "description": "Emergency shutdown"}}]
+  "equipment": [{{ "id": "P-101", "name": "Pump", "description": "High-pressure discharge pump for the main system" }}],
+  "variables": [{{ "id": "PT-101", "name": "Discharge Pressure", "description": "Pressure transmitter monitoring the discharge line" }}],
+  "parameters": [{{ "id": "PAR-001", "name": "12bar", "description": "High-high pressure trip setpoint for pump safety" }}],
+  "conditions": [{{ "id": "CND-001", "name": "PT-101 > 12bar", "description": "Condition where discharge pressure exceeds the safety limit" }}],
+  "actions": [{{ "id": "ACT-001", "name": "P-101.Stop", "description": "Immediate shutdown of pump P-101" }}]
 }}
 
 ### INPUT TEXT:
@@ -41,8 +42,8 @@ Output: {{
         full_prompt = self.get_prompt(chunk, global_context)
         
         try:
-            # Low temperature for stability
-            response = self.llm.invoke(full_prompt, stop_sequences=["###", "```"])
+            # Removed stop_sequences that often truncate JSON if the model uses code blocks
+            response = self.llm.invoke(full_prompt)
             resp_text = response.strip()
             
             # Robust JSON recovery: Find the first { and last }
@@ -98,7 +99,8 @@ class ParallelExtractionOrchestrator:
             "actions": "actions"
         }
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+        # Reduced workers to 1 to avoid overwhelming local Ollama which can cause quality drops
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
             future_to_chunk = {executor.submit(self.agent.extract, chunk, global_context): chunk for chunk in chunks}
             for future in concurrent.futures.as_completed(future_to_chunk):
                 try:

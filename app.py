@@ -126,30 +126,29 @@ def splitter_index():
 
 @app.route('/api/process_document', methods=['POST'])
 def process_document_api():
-    if not ML_AVAILABLE:
-        return jsonify({"error": "ML Model not available"}), 503
     if 'file' not in request.files:
         return jsonify({"error": "No file part"}), 400
     file = request.files['file']
     if file.filename == '':
         return jsonify({"error": "No selected file"}), 400
 
-    temp_path = os.path.join('ml_prototype', 'temp_upload.pdf')
+    temp_path = os.path.join(app.config['UPLOAD_FOLDER'], 'temp_sim_upload.pdf')
     file.save(temp_path)
     try:
-        current_model, current_processor = get_ml_model()
-        if current_model is None:
-            return jsonify({"error": "ML Model failed to load"}), 500
-        from layoutlmv3_extractor import preprocess_document as lm_preprocess, run_inference as lm_inference, structure_output as lm_structure
-        encoding, words, boxes = lm_preprocess(temp_path, current_processor)
-        if encoding is None:
-            return jsonify({"error": "Failed to process PDF"}), 500
-        predictions = lm_inference(current_model, encoding)
-        aligned_predictions = predictions[:len(words)]
-        result = lm_structure(words, boxes, aligned_predictions, LABELS_MAP)
-        return jsonify(result)
+        # Use the same agentic pipeline as the splitter
+        raw_result = extract_entities_ollama(temp_path)
+        
+        if raw_result and "error" not in raw_result:
+            if "equipment_table" in raw_result:
+                norm = raw_result
+            else:
+                norm = normalize_extraction_result(raw_result)
+            return jsonify(norm)
+        else:
+            return jsonify({"error": raw_result.get("error") if raw_result else "Pipeline Error"}), 500
     except Exception as e:
-        print(f"Error: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 @app.route('/upload_split', methods=['POST'])
