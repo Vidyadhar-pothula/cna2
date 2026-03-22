@@ -1,4 +1,4 @@
-from reportlab.pdfgen import canvas
+from reportlab.pdfgen import canvas  # type: ignore # pylint: disable=import-error
 import os
 
 def create_pdf(filename, title, content_lines):

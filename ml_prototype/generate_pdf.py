@@ -1,4 +1,4 @@
-from reportlab.pdfgen import canvas
+from reportlab.pdfgen import canvas  # type: ignore # pylint: disable=import-error
 
 def create_dummy_pdf(filename):
     c = canvas.Canvas(filename)

@@ -1,7 +1,7 @@
 import os
 import sys
 import json
-from tinyllama_service import extract_entities_ollama
+from tinyllama_service import extract_entities_ollama  # type: ignore # pylint: disable=import-error
 
 def trace_job(pdf_path):
     print(f"=== TRACING PRODUCTION PIPELINE FOR: {pdf_path} ===")

@@ -1,8 +1,8 @@
 
 import os
-from reportlab.pdfgen import canvas
-from tinyllama_service import extract_entities_ollama
-from split_pdf import split_pdf
+from reportlab.pdfgen import canvas  # type: ignore # noqa: E402 # pylint: disable=import-error
+from tinyllama_service import extract_entities_ollama  # type: ignore # noqa: E402 # pylint: disable=import-error
+from split_pdf import split_pdf  # type: ignore # noqa: E402 # pylint: disable=import-error
 
 def create_dummy_pdf(filename):
     c = canvas.Canvas(filename)

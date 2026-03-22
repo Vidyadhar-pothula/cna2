@@ -1,6 +1,6 @@
 import os
 import json
-from tinyllama_service import extract_entities_ollama
+from tinyllama_service import extract_entities_ollama  # type: ignore # noqa: E402 # pylint: disable=import-error
 
 def test_on_sample():
     pdf_path = "ml_prototype/sample_2_pump.pdf"

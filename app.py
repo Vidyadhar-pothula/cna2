@@ -137,19 +137,28 @@ def process_document_api():
     temp_path = os.path.join('ml_prototype', 'temp_upload.pdf')
     file.save(temp_path)
     try:
-        current_model, current_processor = get_ml_model()
-        if current_model is None:
-            return jsonify({"error": "ML Model failed to load"}), 500
-        from layoutlmv3_extractor import preprocess_document as lm_preprocess, run_inference as lm_inference, structure_output as lm_structure
-        encoding, words, boxes = lm_preprocess(temp_path, current_processor)
-        if encoding is None:
-            return jsonify({"error": "Failed to process PDF"}), 500
-        predictions = lm_inference(current_model, encoding)
-        aligned_predictions = predictions[:len(words)]
-        result = lm_structure(words, boxes, aligned_predictions, LABELS_MAP)
-        return jsonify(result)
+        # Use the NEW semantic pipeline instead of the legacy LayoutLM block
+        raw_result = extract_entities_ollama(temp_path)
+        
+        if raw_result and "error" not in raw_result:
+            # Normalize for the frontend which expects specific keys in this endpoint
+            return jsonify({
+                "equipment": raw_result.get("equipment_table", []),
+                "variables": raw_result.get("variables_table", []),
+                "parameters": raw_result.get("parameters_table", []),
+                "conditions": raw_result.get("conditions_table", []),
+                "actions": raw_result.get("actions_table", []),
+                "unified_control_table": raw_result.get("unified_control_table", []),
+                "pseudocode": raw_result.get("pseudocode", ""),
+                "metadata": {
+                    "engine": "ORION Semantic Pipeline (Sequential)",
+                    "model": "qwen2.5:14b"
+                }
+            })
+        else:
+            return jsonify({"error": raw_result.get("error") if raw_result else "Extraction failed"}), 500
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error in process_document_api: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/upload_split', methods=['POST'])

@@ -1,35 +1,32 @@
-
-import json
-import re
-import uuid
 import os
 import sys
-from dotenv import load_dotenv
-from langchain_community.llms import Ollama
-from pypdf import PdfReader
+import warnings
 
-# Add current directory to path so ml_prototype is discoverable as a package
-sys.path.append(os.path.dirname(__file__))
-from ml_prototype.pipeline_manager import PipelineManager
-# Fallback service
-from gemini_service import extract_entities as gemini_extract
+# Suppress specific noisy warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", module="urllib3")
+warnings.filterwarnings("ignore", message=".*NotOpenSSLWarning.*")
 
-# Load ENV
-load_dotenv()
-EXTRACTION_MODEL = os.getenv("EXTRACTION_MODEL", "phi3:mini")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+# Standard Python imports resolve this directly from the project root
+from langchain_ollama import OllamaLLM  # type: ignore # noqa: E402 # pylint: disable=import-error
+from ml_prototype.pipeline_manager import PipelineManager  # type: ignore # noqa: E402 # pylint: disable=import-error
 
-def extract_entities_ollama(pdf_path):
+PRIMARY_MODEL = "qwen2.5:14b"
+FALLBACK_MODEL = "llama3.1:8b"
+
+
+def extract_entities_ollama(pdf_path: str) -> dict:
     """
-    Entry point for the Scalable Agentic Pipeline with Gemini Fallback.
+    Entry point for the Semantic Agentic Pipeline using Local Ollama Models.
+    No Gemini Fallback. No Regex Fallback. Pure Semantic Reasoning.
     """
-    print(f"=== Starting Scalable Pipeline: {pdf_path} ===")
-    
-    # 1. Read PDF
-    print(f"--- EXTRACTING ENTITIES FROM: {pdf_path} ---")
+    print(f"=== Starting Semantic Pipeline: {pdf_path} ===")
+
+    # 1. Read PDF Text
+    print(f"--- EXTRACTING TEXT FROM: {pdf_path} ---")
     text = ""
     try:
-        import fitz # Use PyMuPDF for better reliability in industrial docs
+        import fitz  # type: ignore # pylint: disable=import-error
         doc = fitz.open(pdf_path)
         for page in doc:
             text += page.get_text() + "\n"
@@ -38,54 +35,32 @@ def extract_entities_ollama(pdf_path):
         print(f"  [ERROR] Failed to read PDF {pdf_path} with fitz: {e}")
         return {"error": f"Failed to read PDF: {str(e)}"}
 
-    # SCANNED DOCUMENT DETECTION
-    # Low threshold: few chars but significant size = likely scanned.
     text_len = len(text.strip())
-    # Only fallback if text is effectively non-existent AND we have a key
-    is_scanned = text_len < 10 
-    
-    if is_scanned and GEMINI_API_KEY:
-        print(f"  [!] Likely scanned PDF (text len: {text_len}). Falling back to Gemini...")
-        return gemini_extract(pdf_path, GEMINI_API_KEY)
-    elif is_scanned and not GEMINI_API_KEY:
-        print(f"  [!] Scanned PDF detected but no GEMINI_API_KEY. Attempting local scan anyway...")
+    if text_len < 10:
+        err_msg = (
+            "PDF contains no readable text. Scanned PDFs are not supported "
+            "in this local pipeline without an OCR pre-processor."
+        )
+        return {"error": err_msg}
 
-    print(f"  -> Read {text_len} characters. Starting pipeline...")
-    
-    # 2. Initialize and run the new pipeline
+    print(f"  -> Read {text_len} characters. Initializing LLMs...")
+
+    # 2. Initialize Models
     try:
-        # Tuning for stability and speed
-        llm = Ollama(model=EXTRACTION_MODEL, temperature=0.1)
-        manager = PipelineManager(llm)
-        result = manager.run_pipeline(text)
-        
-        # AUGMENTATION STRATEGY: Combine LLM results with Regex results
-        # This ensures we get the 80% reasoning + the 20% reliable tag discovery
-        summary = manager.context_builder.get_summary()
-        
-        # Merge Regex Equipment
-        existing_eq_ids = {str(e.get("id", "")).upper() for e in result.get("equipment_table", [])}
-        for eq_id in summary.get("equipment", []):
-            if eq_id.upper() not in existing_eq_ids:
-                result["equipment_table"].append({"id": eq_id, "name": eq_id, "description": "Reliably identified via scan"})
-        
-        # Merge Regex Variables
-        existing_var_ids = {str(v.get("id", "")).upper() for v in result.get("variables_table", [])}
-        for var_id in summary.get("variables", []):
-            if var_id.upper() not in existing_var_ids:
-                result["variables_table"].append({"id": var_id, "name": var_id, "description": "Reliably identified via scan"})
+        # Use lower temperature for deterministic logic reasoning
+        primary_llm = OllamaLLM(model=PRIMARY_MODEL, temperature=0.1)
+        fallback_llm = OllamaLLM(model=FALLBACK_MODEL, temperature=0.1)
 
-        counts = {k: len(result.get(k, [])) for k in ["equipment_table", "variables_table", "parameters_table", "conditions_table", "actions_table"]}
-        print(f"  -> Pipeline finished. Augmented Results: {counts}")
-        
+        manager = PipelineManager(primary_llm, fallback_llm)
+        result = manager.run_pipeline(text)
+
         return result
     except Exception as e:
-        import traceback
-        print(f"  [CRITICAL ERROR] Pipeline failed: {e}")
-        traceback.print_exc()
-        return {"error": f"Pipeline internal error: {str(e)}"}
+        error_msg = str(e)
+        print(f"  [ERROR] Pipeline safely caught failure: {error_msg}")
+        return {"error": f"Pipeline internal error: {error_msg}"}
 
-# Backward compatibility for app.py
+
 class AgenticPipeline:
     def __init__(self, pdf_path):
         self.pdf_path = pdf_path

@@ -1,69 +1,63 @@
-from typing import List, Dict, Set
-import hashlib
+import json
+from typing import List, Dict, Any
+from .agents import SemanticAgentBase  # type: ignore # pylint: disable=import-error
 
-class NormalizationEngine:
+class SemanticNormalizationEngine(SemanticAgentBase):
     """
-    Handles schema enforcement, deduplication, and hallucination filtering.
+    Handles schema enforcement, deduplication, and conflict resolution semantically.
     """
-    def __init__(self):
-        self.seen_hashes = set()
+    def __init__(self, primary_llm, fallback_llm):
+        super().__init__(primary_llm, fallback_llm)  # type: ignore
 
-    def generate_hash(self, item: Dict) -> str:
-        # Use ID and Name for hashing. Fallback to full content if ID is empty.
-        id_val = str(item.get("id", "")).strip().upper()
-        name_val = str(item.get("name", "")).strip().lower()
-        
-        if id_val:
-            content = f"ID:{id_val}"
-        else:
-            content = f"NAME:{name_val}"
-            
-        return hashlib.md5(content.encode()).hexdigest()
-
-    def normalize_item(self, item: Dict, category: str) -> Dict:
+    def normalize(self, raw_results: Dict[str, List[Dict[str, Any]]]) -> Dict[str, List[Dict[str, Any]]]:
         """
-        Enforces {id, name, description} schema.
+        Takes raw extracted entity lists from multiple sections (or single section) 
+        and semantically merges duplicates, fixes naming variations, and enforces schema.
         """
-        clean_item = {
-            "id": str(item.get("id", "")).strip() or "UNKNOWN",
-            "name": str(item.get("name", "")).strip() or "Unnamed Entity",
-            "description": str(item.get("description", "")).strip() or "No description provided"
-        }
-        
-        # Hallucination check: If it looks like a generic LLM placeholder, flag it
-        placeholders = ["placeholder", "tag1", "var1", "name1", "dummy"]
-        if any(p in clean_item["name"].lower() for p in placeholders):
-            return None # Drop potential hallucination
-            
-        # Optional: Category specific normalization (e.g., Conditions to symbolic form)
-        if category == "conditions":
-            clean_item["name"] = self._canonicalize_condition(clean_item["name"])
-            
-        return clean_item
-
-    def _canonicalize_condition(self, condition_text: str) -> str:
-        # Placeholder for complex symbolic conversion
-        # For now, just basic cleanup. In a real system, use regex or small LLM pass.
-        return condition_text.strip()
-
-    def process_results(self, raw_results: Dict[str, List[Dict]]) -> Dict[str, List[Dict]]:
+        # To avoid context limits, we normalize per category
         normalized_data = {cat: [] for cat in raw_results.keys()}
-        self.seen_hashes.clear()
         
-        for cat, items in raw_results.items():
-            for item in items:
-                # 1. Schema enforcement and cleaning
-                clean_item = self.normalize_item(item, cat)
-                if not clean_item:
-                    continue
+        for category, items in raw_results.items():
+            if not items:
+                continue
+                
+            prompt = f"""
+            ACT AS: Master Data Manager for Industrial Systems.
+            TASK: Semantically normalize the following list of extracted '{category}' entities.
+            
+            RULES:
+            1. Merge exact or semantic duplicates into a single entry.
+            2. Resolve naming variations to a consistent standardized name.
+            3. Ensure every entry strictly has the keys: "id", "name", "description".
+            4. If an entity is clearly a hallucination or dummy placeholder, remove it.
+            
+            INPUT DATA: {json.dumps(items)}
+            
+            OUTPUT FORMAT (JSON ONLY):
+            {{
+                "normalized_{category}": [
+                    {{
+                        "id": "...",
+                        "name": "...",
+                        "description": "..."
+                    }}
+                ]
+            }}
+            
+            Return ONLY valid JSON.
+            """
+            
+            def validate(data):
+                key = f"normalized_{category}"
+                if key not in data or not isinstance(data[key], list):
+                    raise ValueError(f"Missing '{key}' array in normalization.")
                     
-                # 2. Deduplication
-                item_hash = self.generate_hash(clean_item)
-                if item_hash in self.seen_hashes:
-                    # Optional: Merge descriptions or update with richer info
-                    continue
-                    
-                self.seen_hashes.add(item_hash)
-                normalized_data[cat].append(clean_item)
+            try:
+                result = self._invoke_with_fallback(prompt, schema_check=validate)
+                normalized_data[category] = result.get(f"normalized_{category}", [])
+            except Exception as e:
+                print(f"[NORMALIZATION] Semantic normalization failed for {category}: {e}")
+                # Fallback to literal pass-through if all models fail
+                normalized_data[category] = items
                 
         return normalized_data

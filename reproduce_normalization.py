@@ -88,7 +88,7 @@ def normalize_nested_output(data):
     # Remove top-level duplicates if any (simple id based)
     for cat in normalized:
         unique = {}
-        for item in normalized[cat]:
+        for item in normalized[cat]:  # type: ignore
             if "id" in item:
                 unique[item["id"]] = item
         normalized[cat] = list(unique.values())

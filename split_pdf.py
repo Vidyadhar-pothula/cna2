@@ -1,4 +1,4 @@
-import fitz
+import fitz  # type: ignore # pylint: disable=import-error
 import sys
 import os
 

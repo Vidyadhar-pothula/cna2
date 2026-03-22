@@ -1,33 +1,37 @@
 import os
+import sys
+import warnings
 import json
-from tinyllama_service import extract_entities_ollama
 
-def test_pipeline():
-    pdf_path = "test_narrative.pdf"
-    if not os.path.exists(pdf_path):
-        print(f"Error: {pdf_path} not found.")
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", module="urllib3")
+warnings.filterwarnings("ignore", message=".*NotOpenSSLWarning.*")
+
+# Standard project root resolution
+from tinyllama_service import extract_entities_ollama  # type: ignore # noqa: E402 # pylint: disable=import-error
+
+
+def main():
+    print("=== Testing Semantic Agentic Pipeline ===")
+    test_pdf = "test_narrative.pdf"
+
+    if not os.path.exists(test_pdf):
+        print(f"Error: Could not find {test_pdf} to test.")
         return
 
-    print(f"Running extraction on {pdf_path}...")
-    try:
-        result = extract_entities_ollama(pdf_path)
-        print("Extraction completed!")
-        print(json.dumps(result, indent=2))
-        
-        # Basic validation
-        categories = ["equipment", "parameters", "variables", "conditions", "actions"]
-        has_data = False
-        for cat in categories:
-            items = result.get(cat, [])
-            if items:
-                has_data = True
-                print(f"Verified {len(items)} items in {cat}")
-        
-        if not has_data:
-            print("WARNING: No data returned in any category.")
-            
-    except Exception as e:
-        print(f"Test Failed: {e}")
+    print(f"Executing pipeline on {test_pdf}...")
+    result = extract_entities_ollama(test_pdf)
+
+    print("\n=== FINAL OUTPUT SCHEMA ===")
+    clean_dict = {
+        k: v for k, v in result.items()
+        if k != "pseudocode" and k != "metadata"
+    }
+    raw_json = json.dumps(clean_dict, indent=2)  # type: ignore
+    print(raw_json[:1000] + "\n...[truncated]\n")
+    print("=== PSEUDOCODE ===\n" + str(result.get("pseudocode", "")))
+    print("\n=== METADATA ===\n" + str(result.get("metadata", "")))
+
 
 if __name__ == "__main__":
-    test_pipeline()
+    main()

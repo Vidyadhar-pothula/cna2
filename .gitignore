@@ -12,3 +12,4 @@ test_output/
 .venv/
 __pycache__/
 .env
+.vscode/

@@ -1,7 +1,7 @@
-import torch
-from transformers import LayoutLMv3ForTokenClassification, LayoutLMv3Processor
-from pdf2image import convert_from_path
-from PIL import Image
+import torch  # type: ignore # pylint: disable=import-error
+from transformers import LayoutLMv3ForTokenClassification, LayoutLMv3Processor  # type: ignore # pylint: disable=import-error
+from pdf2image import convert_from_path  # type: ignore # pylint: disable=import-error
+from PIL import Image  # type: ignore # pylint: disable=import-error
 import json
 import os
 

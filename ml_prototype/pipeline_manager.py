@@ -1,67 +1,88 @@
-import os
-import json
-from typing import Dict, List
-from ml_prototype.global_context_builder import GlobalContextBuilder
-from ml_prototype.extraction_agents import ParallelExtractionOrchestrator
-from ml_prototype.normalization_engine import NormalizationEngine
-from ml_prototype.semantic_matcher import SemanticMatcher
-from ml_prototype.unified_stitcher import UnifiedStitcher
+import time
+from typing import Dict, Any
+
+from .agents import (  # type: ignore # noqa: E402 # pylint: disable=import-error
+    DocumentStructureAgent,
+    SemanticEntityExtractionAgent,
+    ControlLogicExtractionAgent,
+    SemanticLogicSynthesisAgent,
+    PseudocodeGenerationAgent
+)
+from .normalization_engine import SemanticNormalizationEngine  # type: ignore # noqa: E402 # pylint: disable=import-error
 
 class PipelineManager:
     """
-    Orchestrates the Scalable Agentic Pipeline.
+    Orchestrates the purely Sequential Semantic Agentic Pipeline.
+    NO Parallel Extraction. NO Regex matching.
     """
-    def __init__(self, llm):
-        self.llm = llm
-        self.context_builder = GlobalContextBuilder(llm)
-        self.extractor = ParallelExtractionOrchestrator(llm)
-        self.normalizer = NormalizationEngine()
-        self.matcher = SemanticMatcher()
-        self.stitcher = UnifiedStitcher(self.matcher)
+    def __init__(self, primary_llm, fallback_llm):
+        self.primary_llm = primary_llm
+        self.fallback_llm = fallback_llm
+        
+        # Initialize the 5 core agents
+        self.structure_agent = DocumentStructureAgent(primary_llm, fallback_llm)
+        self.extraction_agent = SemanticEntityExtractionAgent(primary_llm, fallback_llm)
+        self.logic_agent = ControlLogicExtractionAgent(primary_llm, fallback_llm)
+        self.synthesis_agent = SemanticLogicSynthesisAgent(primary_llm, fallback_llm)
+        self.pseudocode_agent = PseudocodeGenerationAgent(primary_llm, fallback_llm)
+        
+        # Initialize semantic normalizer
+        self.normalizer = SemanticNormalizationEngine(primary_llm, fallback_llm)
 
-    def run_pipeline(self, full_text: str) -> Dict:
-        import time
+    def run_pipeline(self, full_text: str) -> Dict[str, Any]:
+        print("=== STARTING SEMANTIC AGENTIC PIPELINE (SEQUENTIAL) ===")
         start_total = time.time()
         
-        print("--- PHASE 1: Global Context Building (Parallel) ---")
+        # --- AGENT 1: Document Structure ---
+        print("[AGENT 1] Structuring Document Semantically...")
         t0 = time.time()
-        self.context_builder.process_document(full_text)
-        global_context = self.context_builder.get_summary()
-        print(f"  -> Context Building took {time.time()-t0:.2f}s")
+        structure_obj = self.structure_agent.segment(full_text)
+        sections = structure_obj.get("sections", [])
+        print(f"  -> Generated {len(sections)} semantic sections in {time.time()-t0:.2f}s")
         
-        # Split text for detailed extraction
-        chunks = self.context_builder.chunk_text(full_text)
-        
-        print("--- PHASE 2: Parallel Extraction ---")
-        t1 = time.time()
-        raw_results = self.extractor.run_parallel(chunks, global_context)
-        print(f"  -> Extraction took {time.time()-t1:.2f}s")
-        
-        print("--- PHASE 3: Normalization & Deduplication ---")
-        t2 = time.time()
-        normalized_data = self.normalizer.process_results(raw_results)
-        print(f"  -> Normalization took {time.time()-t2:.2f}s")
-        # 4. Final Stitching
-        print("--- PHASE 4: Semantic Matching & Stitching ---")
-        start_time = time.time()
-        
-        # Ensure regex fallback items are at least present in normalized_data
-        # This handles cases where LLM found NOTHING but regex found items
-        summary = self.context_builder.get_summary()
-        if not normalized_data.get("equipment") and summary.get("equipment"):
-            normalized_data["equipment"] = [{"id": e, "name": e, "description": "Discovered via Regex"} for e in summary["equipment"]]
-        if not normalized_data.get("variables") and summary.get("variables"):
-            normalized_data["variables"] = [{"id": v, "name": v, "description": "Discovered via Regex"} for v in summary["variables"]]
+        # Accumulators
+        raw_entities = {
+            "equipment": [], "variables": [], "parameters": [], "conditions": [], "actions": []
+        }
+        raw_logic_rules = []
 
-        unified_table = self.stitcher.stitch(normalized_data)
-        stitching_time = time.time() - start_time
-        print(f"  -> Stitching took {stitching_time:.2f}s")
+        # --- AGENT 2 & 3: Sequential Entity & Logic Extraction per Section ---
+        print("[AGENT 2 & 3] Extracting Entities and Logic sequentially per section...")
+        t1 = time.time()
+        for idx, sec in enumerate(sections):
+            print(f"  -> Processing Section {idx+1}/{len(sections)}: {sec.get('section_title', 'Unknown')}")
+            content = sec.get("content", "")
+            context = sec.get("equipment_context", "Unknown Equipment")
+            
+            # Agent 2: Fetch Entities
+            extracted_entities = self.extraction_agent.extract_entities(content, context)
+            for k in raw_entities.keys():
+                raw_entities[k].extend(extracted_entities.get(k, []))
+            
+            # Agent 3: Fetch Logic Rules
+            logic_rules = self.logic_agent.extract_logic(content)
+            raw_logic_rules.extend(logic_rules)
+            
+        print(f"  -> Sequential Extraction took {time.time()-t1:.2f}s")
         
-        print("--- PHASE 5: Implementation Code Generation ---")
-        t4 = time.time()
-        pseudocode = self.generate_pseudocode(unified_table)
-        print(f"  -> Code Gen took {time.time()-t4:.2f}s")
+        # --- NORMALIZATION ---
+        print("[NORMALIZATION] Semantically normalizing extracted entities...")
+        t_norm = time.time()
+        normalized_data = self.normalizer.normalize(raw_entities)
+        print(f"  -> Normalization took {time.time()-t_norm:.2f}s")
         
+        # --- AGENT 4: Semantic Logic Synthesis ---
+        print("[AGENT 4] Synthesizing control logic table semantically...")
+        t_synth = time.time()
+        unified_table = self.synthesis_agent.synthesize(normalized_data, raw_logic_rules)
+        print(f"  -> Synthesis took {time.time()-t_synth:.2f}s")
+        
+        # --- AGENT 5: Pseudocode Generation ---
+        print("[AGENT 5] Generating equipment-specific pseudocode...")
+        t_code = time.time()
+        pseudocode = self.pseudocode_agent.generate_code(unified_table)
+        print(f"  -> Pseudocode generation took {time.time()-t_code:.2f}s")
+
         total_time = time.time() - start_total
         print(f"=== TOTAL PIPELINE TIME: {total_time:.2f}s ===")
         
@@ -74,65 +95,8 @@ class PipelineManager:
             "unified_control_table": unified_table,
             "pseudocode": pseudocode,
             "metadata": {
-                "engine": "ScalableAgenticPipeline-v3 (Production)",
-                "model": "phi3-mini-strict"
+                "engine": "Sequential Semantic Architecture v4",
+                "primary_model": "qwen2.5:14b",
+                "fallback_model": "llama3.1:8b"
             }
         }
-
-    def generate_pseudocode(self, unified_table: List[Dict]) -> str:
-        """
-        Generates professionally formatted Structured Text (ST) code.
-        Uses a hybrid approach: LLM for logic conversion, Python for indentation.
-        """
-        if not unified_table:
-            return "// No logic extracted."
-            
-        # 1. First, use LLM to refine narrative strings into symbolic-style expressions where needed
-        # We process in batches to maintain context without overloading
-        refined_rows = []
-        for row in unified_table[:15]: # Limit to avoid token collapse
-            refined_row = row.copy()
-            if row.get("condition") or row.get("action"):
-                prompt = f"Convert this narrative to short symbolic code (e.g. 'Level > High' instead of 'when level exceeds high limit').\nInput: {row['condition']} -> {row['action']}\nShort Code Format: COND: [Logic] | ACT: [Action]"
-                try:
-                    resp = self.llm.invoke(prompt).strip()
-                    if "COND:" in resp and "ACT:" in resp:
-                        parts = resp.split("|")
-                        refined_row["condition"] = parts[0].replace("COND:", "").strip()
-                        refined_row["action"] = parts[1].replace("ACT:", "").strip()
-                except:
-                    pass
-            refined_rows.append(refined_row)
-
-        # 2. Use Deterministic Formatter for the structural "Shell"
-        return self._build_st_code(refined_rows)
-
-    def _build_st_code(self, rows: List[Dict]) -> str:
-        output = [
-            "(* ****************************************************** *)",
-            "(* ORION GENERATED CONTROL LOGIC (IEC 61131-3 ST)         *)",
-            "(* ****************************************************** *)",
-            ""
-        ]
-        
-        for row in rows:
-            equip = row.get("equipment", "Unknown")
-            cond = row.get("condition", "").strip()
-            act = row.get("action", "").strip()
-            
-            if not cond and not act:
-                continue
-                
-            output.append(f"// Control Logic for: {equip}")
-            if cond:
-                output.append(f"IF {cond} THEN")
-                if act:
-                    output.append(f"    {act};")
-                else:
-                    output.append(f"    // No explicit action defined;")
-                output.append("END_IF;")
-            elif act:
-                output.append(f"{act}; // Unconditional execution")
-            output.append("") # Spacer
-            
-        return "\n".join(output)
