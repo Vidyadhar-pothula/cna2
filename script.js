@@ -113,23 +113,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await response.json();
-            window.llmFullResults = data; // Global or local state
-            let llmFullResults = data;
 
             // Map API data
             extractedEntities = [];
-            const mapEntity = (e, type) => ({
-                phrase: e.original_phrase || e.name || e.id,
-                type: type,
-                id: e.id,
-                description: e.description
-            });
-
-            if (data.equipment_table) extractedEntities = extractedEntities.concat(data.equipment_table.map(e => mapEntity(e, 'equipment')));
-            if (data.variables_table) extractedEntities = extractedEntities.concat(data.variables_table.map(e => mapEntity(e, 'variable')));
-            if (data.parameters_table) extractedEntities = extractedEntities.concat(data.parameters_table.map(e => mapEntity(e, 'parameter')));
-            if (data.conditions_table) extractedEntities = extractedEntities.concat(data.conditions_table.map(e => mapEntity(e, 'condition')));
-            if (data.actions_table) extractedEntities = extractedEntities.concat(data.actions_table.map(e => mapEntity(e, 'action')));
+            if (data.equipment) extractedEntities = extractedEntities.concat(data.equipment.map(e => ({ phrase: e.name, type: 'equipment' })));
+            if (data.variables) extractedEntities = extractedEntities.concat(data.variables.map(e => ({ phrase: e.name, type: 'variable' })));
 
             // Store Unified Control Table
             unifiedControlTable = data.unified_control_table || [];
@@ -213,12 +201,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Phase 4: Logic Translation
     function runPhase4() {
         initialCodeDisplay.textContent = '';
-        if (llmFullResults && llmFullResults.pseudocode) {
-            typeWriter(llmFullResults.pseudocode, initialCodeDisplay);
-        } else {
-            const code = `// AI-Generated Logic from Unified Control Table...`;
-            typeWriter(code, initialCodeDisplay);
-        }
+        const code = `// AI-Generated Logic from Unified Control Table...`;
+        typeWriter(code, initialCodeDisplay);
     }
 
     // Phase 5: Validation & Final Output

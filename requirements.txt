@@ -1,7 +1,0 @@
-flask
-flask-cors
-python-dotenv
-pypdf
-langchain
-langchain-community
-langchain-ollama

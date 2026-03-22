@@ -27,8 +27,7 @@ class NormalizationEngine:
         clean_item = {
             "id": str(item.get("id", "")).strip() or "UNKNOWN",
             "name": str(item.get("name", "")).strip() or "Unnamed Entity",
-            "description": str(item.get("description", "")).strip() or "No description provided",
-            "original_phrase": str(item.get("original_phrase", "")).strip()
+            "description": str(item.get("description", "")).strip() or "No description provided"
         }
         
         # Hallucination check: If it looks like a generic LLM placeholder, flag it
