@@ -220,27 +220,50 @@ class PseudocodeGenerationAgent(SemanticAgentBase):
     AGENT 5
     Purpose: Generate equipment-specific pseudocode derived straight from the unified table.
     """
-    def generate_code(self, unified_table: List[Dict]) -> str:
+    def generate_code(self, unified_table: List[Dict], entities: Dict[str, List[Dict]]) -> str:
+        import json
         prompt = f"""
-        ACT AS: PLC Programmer.
-        TASK: Generate equipment-specific pseudocode derived STRICTLY from the unified control table provided.
-        Each equipment must receive its own distinct pseudocode block. Use structured logic (READ, IF, THEN, ENDIF).
+        ACT AS: Professional Control Systems Programmer.
+        TASK: Generate human-readable control pseudocode derived from the provided Unified Control Table.
         
-        EXAMPLE FORMAT:
-        SV01 – Surge Vessel
-        READ VesselWeight
-        IF VesselWeight > HighWeightLimit THEN
-            DisableAdditionControl
+        CRITICAL REQUIREMENT: RESOLVE SYMBOLIC IDENTIFIERS
+        The inputs contain symbolic IDs (e.g., COND-001, ACT-002, VAR-003, PARAM-004). 
+        You MUST use the provided ENTITY TABLES to resolve these into real logical expressions and readable names.
+        
+        RESOLUTION RULES:
+        1. VARIABLE RESOLUTION: Map VAR-* IDs to readable names (e.g., VAR-PH -> PV, VAR-VESSEL-WGT -> VesselWeight).
+        2. PARAMETER RESOLUTION: Map PARAM-* IDs to readable names (e.g., PARAM-HI-LIMIT -> HighWeightLimit, PARAM-TOL -> Tolerance).
+        3. CONDITION RESOLUTION: Convert condition names into logical expressions.
+           - "pH below setpoint (Hi side)" -> PV < SP - Deadband
+           - "pH above setpoint (Lo side)" -> PV > SP + Deadband
+           - Flow equilibrium: ABS(IncomingFlowRate - OutgoingFlowRate - WeightChangeRate) > Tolerance
+        4. ACTION RESOLUTION: Map ACT-* IDs to meaningful operations based on their descriptions.
+           - ACT-HI-SIDE-ADDITION -> AddBase()
+           - ACT-LO-SIDE-ADDITION -> AddAcid()
+           - ACT-DIVERT-FLOW -> OpenDivertValve()
+           - ACT-ALARM -> TriggerAlarm()
+        
+        NO SYMBOLIC IDs: The final output must NOT contain any "COND-", "ACT-", "VAR-", or "PARAM-" strings.
+        
+        PSEUDOCODE STRUCTURE:
+        Each equipment block must follow:
+        READ <variables>
+        IF <logical expression> THEN
+            <action_operation>()
         ENDIF
         
-        UNIFIED TABLE:
+        --- INPUT DATA ---
+        
+        ENTITY TABLES (For Resolution):
+        {json.dumps(entities, indent=2)}
+        
+        UNIFIED CONTROL TABLE (Source of Logic):
         {json.dumps(unified_table, indent=2)}
         
-        Return ONLY the raw pseudocode text (NO markdown formatting or conversational filler).
+        Return ONLY the raw resolved pseudocode text.
         """
         
         try:
-            # We use a direct invoke because the output is text, not strict JSON
             response = self.primary_llm.invoke(prompt)
             return response.replace("```pseudocode", "").replace("``` text", "").replace("```", "").strip()
         except Exception:

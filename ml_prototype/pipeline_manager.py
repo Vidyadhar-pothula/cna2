@@ -80,7 +80,7 @@ class PipelineManager:
         # --- AGENT 5: Pseudocode Generation ---
         print("[AGENT 5] Generating equipment-specific pseudocode...")
         t_code = time.time()
-        pseudocode = self.pseudocode_agent.generate_code(unified_table)
+        pseudocode = self.pseudocode_agent.generate_code(unified_table, normalized_data)
         print(f"  -> Pseudocode generation took {time.time()-t_code:.2f}s")
 
         total_time = time.time() - start_total
