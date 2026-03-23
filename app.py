@@ -45,7 +45,7 @@ except ImportError as e:
 if shutil.which('pdftoppm') is None:
     print("WARNING: 'pdftoppm' (poppler) not found in PATH.")
 
-app = Flask(__name__, static_folder='.', template_folder='templates')
+app = Flask(__name__)
 app.secret_key = 'supersecretkey'
 CORS(app)
 
