@@ -8,64 +8,20 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.prepend(gridOverlay);
 
     // ============================================================
-    // 2. INTRO ANIMATION SEQUENCE
-    //    Phase 1 (0s):     Symbol appears tiny, scales up to full size (CSS animation, 1.2s)
-    //    Phase 2 (1.8s):   Symbol slides left (translateX) to make room
-    //    Phase 3 (2.2s):   RION text fades + slides in from right (mid-slide)
-    //    Phase 4 (4s+):    Scroll indicator appears, dismiss becomes active
+    // 2. INTRO ANIMATION SEQUENCE (pure CSS handles it)
+    //    0s   — power symbol fades in, centered (translateX 140px offset)
+    //    2s   — symbol slides left to natural position (0.8s)
+    //    2.3s — RION text fades in during the slide
+    //    3.5s — scroll indicator appears
+    //    3.5s+ — dismiss becomes active
     // ============================================================
 
-    const introLayer     = document.querySelector('.intro-layer');
-    const mainApp        = document.querySelector('.main-app');
-    const powerSymbol    = document.querySelector('.power-symbol');
-    const orionText      = document.querySelector('.orion-text');
-    const orionContainer = document.querySelector('.orion-container');
+    const introLayer  = document.querySelector('.intro-layer');
+    const mainApp     = document.querySelector('.main-app');
 
-    // Hide main app until scroll
     if (mainApp) {
         mainApp.style.opacity    = '0';
         mainApp.style.visibility = 'hidden';
-    }
-
-    // The container uses flexbox. Symbol starts centered because
-    // RION text is invisible (opacity:0, width still 0-ish visually).
-    // We offset the symbol right initially so it appears screen-center,
-    // then remove the offset as text appears, making it slide left naturally.
-
-    if (powerSymbol && orionText && orionContainer) {
-
-        // Push symbol to center of screen initially
-        // (half the width of the RION text, approx)
-        powerSymbol.style.transform = 'scale(1) translateX(0)';
-
-        // Wait for scale animation to mostly finish (1.2s CSS anim),
-        // then add a rightward offset so it looks centered,
-        // then on the next frame remove it — triggering the CSS transition slide
-        setTimeout(() => {
-            // Measure how wide the text will be once visible
-            // Use a rough offset — half the orion text width
-            const offset = orionText.offsetWidth > 0
-                ? Math.round(orionText.offsetWidth / 2)
-                : 160; // fallback ~160px
-
-            // Jump symbol to offset (no transition) so it's screen-center
-            powerSymbol.style.transition = 'none';
-            powerSymbol.style.transform  = `translateX(${offset}px)`;
-
-            // Next frame: restore transition and slide back to 0 (leftward)
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    powerSymbol.style.transition = 'transform 0.85s cubic-bezier(0.4, 0, 0.2, 1), filter 0.3s ease';
-                    powerSymbol.style.transform  = 'translateX(0)';
-                });
-            });
-
-        }, 1400); // after scale animation
-
-        // Phase 3: reveal RION text mid-slide (300ms into the slide)
-        setTimeout(() => {
-            orionText.classList.add('visible');
-        }, 1700);
     }
 
     // Step 2 — dismiss intro on scroll, click, or keydown
@@ -90,12 +46,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1000);
     };
 
-    // Only allow dismiss after the logo animation plays (~3.2s)
+    // Only allow dismiss after animations complete (~3.5s)
     setTimeout(() => {
         window.addEventListener('scroll',  () => { if (window.scrollY > 5) dismissIntro(); }, { passive: true });
         introLayer && introLayer.addEventListener('click', dismissIntro);
         window.addEventListener('keydown', dismissIntro);
-    }, 3200);
+    }, 3500);
 
     // ============================================================
     // 3. SCROLL-BASED SECTION REVEAL
