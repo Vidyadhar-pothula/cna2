@@ -56,7 +56,7 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['OUTPUT_FOLDER'], exist_ok=True)
 
 # Global Job Store
-JOBS = {}
+JOBS: dict = {}
 MODEL_LOCK = threading.Lock()
 model = None
 processor = None
@@ -113,12 +113,12 @@ def normalize_extraction_result(raw_result):
 @app.route('/')
 def index():
     print("[Route] GET /")
-    return render_template('splitter.html')
+    return render_template('index.html')
 
 @app.route('/analysis')
 def analysis():
     print("[Route] GET /analysis")
-    return send_from_directory('.', 'index.html')
+    return render_template('index.html')
 
 @app.route('/splitter')
 def splitter_index():
@@ -126,8 +126,7 @@ def splitter_index():
 
 @app.route('/api/process_document', methods=['POST'])
 def process_document_api():
-    if not ML_AVAILABLE:
-        return jsonify({"error": "ML Model not available"}), 503
+    # Legacy ML_AVAILABLE check removed as we now use the Ollama semantic pipeline
     if 'file' not in request.files:
         return jsonify({"error": "No file part"}), 400
     file = request.files['file']
