@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory, render_template, send_file, flash, redirect, url_for
+from flask import Flask, request, jsonify, send_from_directory, render_template, send_file, flash, redirect, url_for, Response
 from flask_cors import CORS
 import os
 import sys
@@ -210,6 +210,42 @@ def upload_file_split():
 @app.route('/api/job_status/<session_id>')
 def job_status(session_id):
     return jsonify(JOBS.get(session_id, {"status": "not_found"}))
+
+@app.route('/api/chat', methods=['POST'])
+def chat_api():
+    """
+    Chat endpoint proxying to local Ollama (Qwen 2.5 14B).
+    Accepts: { messages: [], system: "" }
+    """
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+        
+        from langchain_ollama import OllamaLLM
+        # Use existing model constants from tinyllama_service if possible, 
+        # or just hardcode for speed here as it's the verified model.
+        llm = OllamaLLM(model="qwen2.5:14b", temperature=0.2)
+        
+        messages = data.get('messages', [])
+        system_prompt = data.get('system', '')
+        
+        # Combine into a single prompt for standard OllamaLLM call
+        full_prompt = f"System: {system_prompt}\n\n"
+        for msg in messages:
+            role = "User" if msg['role'] == 'user' else "Assistant"
+            full_prompt += f"{role}: {msg['content']}\n"
+        full_prompt += "Assistant: "
+        
+        response_text = llm.invoke(full_prompt)
+        
+        # Structure response to match what the frontend expects (Claude-like format)
+        return jsonify({
+            "content": [{"type": "text", "text": response_text}]
+        })
+    except Exception as e:
+        print(f"[Chat API] Error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/download_split/<session_id>/<filename>')
 def download_file_split(session_id, filename):

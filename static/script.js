@@ -610,18 +610,19 @@ Only include this block when the user explicitly asks to see something in the do
         try {
             const systemPrompt = buildSystemPrompt();
 
-            const response = await fetch('https://api.anthropic.com/v1/messages', {
+            // CALL LOCAL BACKEND INSTEAD OF ANTHROPIC DIRECTLY
+            const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    model: 'claude-sonnet-4-20250514',
-                    max_tokens: 1000,
                     system: systemPrompt,
                     messages: chatHistory
                 })
             });
 
             const data = await response.json();
+            if (data.error) throw new Error(data.error);
+
             const rawText = data.content
                 .filter(b => b.type === 'text')
                 .map(b => b.text)
