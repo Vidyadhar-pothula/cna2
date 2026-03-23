@@ -1,64 +1,107 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // ============================================================
-    // 1. CINEMATIC ATMOSPHERE
+    // 1. GRID OVERLAY
     // ============================================================
-
-    // Inject grid overlay
     const gridOverlay = document.createElement('div');
     gridOverlay.className = 'grid-overlay';
     document.body.prepend(gridOverlay);
 
-    // Intro → Main App transition
-    const introLayer = document.querySelector('.intro-layer');
-    const mainApp    = document.querySelector('.main-app');
+    // ============================================================
+    // 2. INTRO ANIMATION SEQUENCE
+    //    - Power symbol appears centered
+    //    - After 3s: symbol slides LEFT, RION fades in to the right
+    //    - After that: scroll indicator appears
+    //    - Scroll down → intro fades out → main app reveals
+    // ============================================================
 
-    if (introLayer && mainApp) {
+    const introLayer     = document.querySelector('.intro-layer');
+    const mainApp        = document.querySelector('.main-app');
+    const powerSymbol    = document.querySelector('.power-symbol');
+    const orionText      = document.querySelector('.orion-text');
+    const orionContainer = document.querySelector('.orion-container');
+
+    // Hide main app until scroll
+    if (mainApp) {
         mainApp.style.opacity    = '0';
         mainApp.style.visibility = 'hidden';
-
-        let introGone = false;
-
-        const dismissIntro = () => {
-            if (introGone) return;
-            introGone = true;
-            introLayer.style.opacity    = '0';
-            introLayer.style.visibility = 'hidden';
-            setTimeout(() => {
-                introLayer.style.display     = 'none';
-                mainApp.style.visibility     = 'visible';
-                mainApp.style.opacity        = '1';
-                mainApp.style.transition     = 'opacity 1s ease';
-            }, 1200);
-        };
-
-        window.addEventListener('scroll',  () => { if (window.scrollY > 10) dismissIntro(); }, { passive: true });
-        introLayer.addEventListener('click', dismissIntro);
-        window.addEventListener('keydown',  dismissIntro);
     }
 
-    // Scroll-based section reveal
+    // Step 1 — after 3 seconds: slide symbol left, reveal RION text
+    if (powerSymbol && orionText) {
+        setTimeout(() => {
+            // The symbol was centered; now it sits naturally left of the text
+            // We just need to reveal the text — the flex layout handles positioning
+            orionText.classList.add('visible');
+        }, 3000);
+    }
+
+    // Step 2 — dismiss intro on scroll, click, or keydown
+    let introGone = false;
+
+    const dismissIntro = () => {
+        if (introGone) return;
+        introGone = true;
+
+        if (introLayer) {
+            introLayer.style.opacity    = '0';
+            introLayer.style.visibility = 'hidden';
+        }
+
+        setTimeout(() => {
+            if (introLayer) introLayer.style.display = 'none';
+            if (mainApp) {
+                mainApp.style.visibility = 'visible';
+                mainApp.style.opacity    = '1';
+                mainApp.style.transition = 'opacity 0.9s ease';
+            }
+        }, 1000);
+    };
+
+    // Only allow dismiss after the logo animation plays (4s)
+    setTimeout(() => {
+        window.addEventListener('scroll',  () => { if (window.scrollY > 5) dismissIntro(); }, { passive: true });
+        introLayer && introLayer.addEventListener('click', dismissIntro);
+        window.addEventListener('keydown', dismissIntro);
+    }, 4000);
+
+    // ============================================================
+    // 3. SCROLL-BASED SECTION REVEAL
+    //    Sections are hidden by default, appear as user scrolls
+    // ============================================================
+
     const revealSections = document.querySelectorAll(
         '.objective-section, .upload-section, .processing-section'
     );
+
     const revealObserver = new IntersectionObserver((entries) => {
-        entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+        entries.forEach(e => {
+            if (e.isIntersecting) e.target.classList.add('visible');
+        });
     }, { threshold: 0.08 });
+
     revealSections.forEach(s => revealObserver.observe(s));
 
-    // Subtle mouse parallax on intro logo
-    const orionContainer = document.querySelector('.orion-container');
-    if (orionContainer) {
-        window.addEventListener('mousemove', (e) => {
-            const x = (e.clientX / window.innerWidth  - 0.5) * 8;
-            const y = (e.clientY / window.innerHeight - 0.5) * 4;
-            orionContainer.style.transform  = `translate(${x}px, ${y}px)`;
-            orionContainer.style.transition = 'transform 0.6s ease';
-        });
+    // ============================================================
+    // 4. RESULTS HIDDEN UNTIL UPLOAD
+    //    Processing section and all result tables are hidden
+    //    until the user actually uploads and gets a response
+    // ============================================================
+
+    const processingSection = document.querySelector('.processing-section');
+    const equipmentSection  = document.getElementById('equipment-section');
+    const variablesSection  = document.getElementById('variables-section');
+    const unifiedSection    = document.getElementById('unified-section');
+    const pseudocodeSection = document.getElementById('pseudocode-section');
+    const workflowActions   = document.getElementById('workflow-actions');
+
+    // Hide the entire processing section initially
+    if (processingSection) {
+        processingSection.style.display = 'none';
     }
 
     // ============================================================
-    // 2. JOURNEY TIMELINE — step activation helper
+    // 5. JOURNEY TIMELINE HELPER
     // ============================================================
 
     const nodes = document.querySelectorAll('.node');
@@ -66,43 +109,23 @@ document.addEventListener('DOMContentLoaded', () => {
     function setActiveStep(stepNumber) {
         nodes.forEach(node => {
             const s = parseInt(node.dataset.step);
-            node.classList.toggle('active',    s === stepNumber);
-            node.classList.toggle('completed', s < stepNumber);
+            node.classList.remove('active', 'completed');
+            if (s === stepNumber) node.classList.add('active');
+            if (s < stepNumber)   node.classList.add('completed');
         });
     }
 
     // ============================================================
-    // 3. START ANALYSIS — PDF upload & API call
+    // 6. START ANALYSIS — PDF upload & API call
     // ============================================================
 
-    const startBtn      = document.getElementById('startBtn');
-    const fileInput     = document.getElementById('input-pdf');
-
-    // Result section elements
-    const equipmentSection  = document.getElementById('equipment-section');
-    const variablesSection  = document.getElementById('variables-section');
-    const unifiedSection    = document.getElementById('unified-section');
-    const pseudocodeSection = document.getElementById('pseudocode-section');
-    const workflowActions   = document.getElementById('workflow-actions');
+    const startBtn  = document.getElementById('startBtn');
+    const fileInput = document.getElementById('input-pdf');
 
     const equipmentTbody    = document.getElementById('equipment-tbody');
     const variablesTbody    = document.getElementById('variables-tbody');
     const unifiedTbody      = document.getElementById('unified-tbody');
     const pseudocodeDisplay = document.getElementById('pseudocode-display');
-
-    // Hide all result sections initially
-    function resetResults() {
-        equipmentSection.style.display  = 'block'; // always show skeleton
-        variablesSection.style.display  = 'none';
-        unifiedSection.style.display    = 'none';
-        pseudocodeSection.style.display = 'none';
-        workflowActions.style.display   = 'none';
-        equipmentTbody.innerHTML  = '';
-        variablesTbody.innerHTML  = '';
-        unifiedTbody.innerHTML    = '';
-        pseudocodeDisplay.textContent = '';
-        setActiveStep(1);
-    }
 
     if (startBtn) {
         startBtn.addEventListener('click', async () => {
@@ -111,12 +134,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Scroll down to the processing section
-            document.querySelector('.processing-section').scrollIntoView({ behavior: 'smooth' });
+            // Show the processing section for the first time
+            if (processingSection) {
+                processingSection.style.display = 'block';
+                // Smooth scroll to it
+                setTimeout(() => {
+                    processingSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            }
 
-            startBtn.textContent = 'Processing...';
+            // Reset all result panels
+            if (equipmentSection)  equipmentSection.style.display  = 'none';
+            if (variablesSection)  variablesSection.style.display  = 'none';
+            if (unifiedSection)    unifiedSection.style.display    = 'none';
+            if (pseudocodeSection) pseudocodeSection.style.display = 'none';
+            if (workflowActions)   workflowActions.style.display   = 'none';
+            if (equipmentTbody)    equipmentTbody.innerHTML  = '';
+            if (variablesTbody)    variablesTbody.innerHTML  = '';
+            if (unifiedTbody)      unifiedTbody.innerHTML    = '';
+            if (pseudocodeDisplay) pseudocodeDisplay.textContent = '';
+
+            setActiveStep(1);
+
+            startBtn.textContent = 'Processing…';
             startBtn.disabled    = true;
-            resetResults();
 
             const formData = new FormData();
             formData.append('file', fileInput.files[0]);
@@ -133,34 +174,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // ---- Step 1: Equipment Table ----
                 setActiveStep(1);
-                renderEquipment(data.equipment || []);
+                if (equipmentSection) {
+                    equipmentSection.style.display = 'block';
+                    renderEquipment(data.equipment || []);
+                }
 
                 // ---- Step 2: Variables (Logic Extraction) ----
-                await delay(600);
+                await delay(700);
                 setActiveStep(2);
-                variablesSection.style.display = 'block';
-                renderVariables(data.variables || []);
+                if (variablesSection) {
+                    variablesSection.style.display = 'block';
+                    renderVariables(data.variables || []);
+                }
 
                 // ---- Step 3: Unified Control Table ----
-                await delay(600);
+                await delay(700);
                 setActiveStep(3);
-                unifiedSection.style.display = 'block';
-                renderUnified(data.unified_control_table || []);
+                if (unifiedSection) {
+                    unifiedSection.style.display = 'block';
+                    renderUnified(data.unified_control_table || []);
+                }
 
                 // ---- Step 4: Pseudocode ----
-                await delay(600);
+                await delay(700);
                 setActiveStep(4);
-                pseudocodeSection.style.display = 'block';
-                const pseudocode = data.pseudocode || JSON.stringify(data.unified_control_table || [], null, 2);
-                typeWriter(pseudocode, pseudocodeDisplay);
+                if (pseudocodeSection && pseudocodeDisplay) {
+                    pseudocodeSection.style.display = 'block';
+                    const code = data.pseudocode || JSON.stringify(data.unified_control_table || [], null, 2);
+                    typeWriter(code, pseudocodeDisplay);
+                }
 
                 // Show action buttons
-                await delay(800);
-                workflowActions.style.display = 'flex';
+                await delay(900);
+                if (workflowActions) workflowActions.style.display = 'flex';
 
             } catch (error) {
                 console.error(error);
                 alert('Error processing document: ' + error.message);
+                // Hide processing section again on error
+                if (processingSection) processingSection.style.display = 'none';
             } finally {
                 startBtn.textContent = 'Start Analysis';
                 startBtn.disabled    = false;
@@ -169,65 +221,68 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ============================================================
-    // 4. RENDER HELPERS
+    // 7. RENDER HELPERS
     // ============================================================
 
     function renderEquipment(equipment) {
+        if (!equipmentTbody) return;
         equipmentTbody.innerHTML = '';
         if (equipment.length === 0) {
-            equipmentTbody.innerHTML = '<tr><td colspan="3" style="opacity:0.4;text-align:center;">No equipment data found.</td></tr>';
+            equipmentTbody.innerHTML = '<tr><td colspan="3" style="opacity:0.35;text-align:center;padding:20px;">No equipment data found.</td></tr>';
             return;
         }
         equipment.forEach((item, i) => {
             setTimeout(() => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td style="color:var(--green);font-family:'Fira Code',monospace;font-size:0.82rem;">${item.id || ('EQP-' + String(i+1).padStart(2,'0'))}</td>
+                    <td style="color:var(--green);font-family:'Fira Code',monospace;font-size:0.8rem;">${item.id || ('EQP-' + String(i+1).padStart(2,'0'))}</td>
                     <td>${item.name || item.condition || ''}</td>
-                    <td style="opacity:0.7;">${item.description || item.value || ''}</td>
+                    <td style="color:var(--white-70);">${item.description || item.value || ''}</td>
                 `;
                 equipmentTbody.appendChild(tr);
-            }, i * 120);
+            }, i * 100);
         });
     }
 
     function renderVariables(variables) {
+        if (!variablesTbody) return;
         variablesTbody.innerHTML = '';
         if (variables.length === 0) {
-            variablesTbody.innerHTML = '<tr><td colspan="3" style="opacity:0.4;text-align:center;">No variables found.</td></tr>';
+            variablesTbody.innerHTML = '<tr><td colspan="3" style="opacity:0.35;text-align:center;padding:20px;">No variables found.</td></tr>';
             return;
         }
         variables.forEach((item, i) => {
             setTimeout(() => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td style="color:var(--green);font-family:'Fira Code',monospace;font-size:0.82rem;">${item.id || ('VAR-' + String(i+1).padStart(2,'0'))}</td>
+                    <td style="color:var(--green);font-family:'Fira Code',monospace;font-size:0.8rem;">${item.id || ('VAR-' + String(i+1).padStart(2,'0'))}</td>
                     <td>${item.name || ''}</td>
-                    <td style="opacity:0.7;">${item.value || item.range || ''}</td>
+                    <td style="color:var(--white-70);">${item.value || item.range || ''}</td>
                 `;
                 variablesTbody.appendChild(tr);
-            }, i * 120);
+            }, i * 100);
         });
     }
 
     function renderUnified(rows) {
+        if (!unifiedTbody) return;
         unifiedTbody.innerHTML = '';
         if (rows.length === 0) {
-            unifiedTbody.innerHTML = '<tr><td colspan="5" style="opacity:0.4;text-align:center;">No unified control data generated.</td></tr>';
+            unifiedTbody.innerHTML = '<tr><td colspan="5" style="opacity:0.35;text-align:center;padding:20px;">No unified control data generated.</td></tr>';
             return;
         }
         rows.forEach((row, i) => {
             setTimeout(() => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${row.equipment  || ''}</td>
-                    <td>${row.variable   || ''}</td>
-                    <td>${row.parameter  || ''}</td>
-                    <td>${row.condition  || ''}</td>
-                    <td>${row.action     || ''}</td>
+                    <td>${row.equipment || ''}</td>
+                    <td>${row.variable  || ''}</td>
+                    <td>${row.parameter || ''}</td>
+                    <td>${row.condition || ''}</td>
+                    <td>${row.action    || ''}</td>
                 `;
                 unifiedTbody.appendChild(tr);
-            }, i * 150);
+            }, i * 120);
         });
     }
 
@@ -250,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ============================================================
-    // 5. WORKFLOW BUTTONS
+    // 8. WORKFLOW BUTTONS
     // ============================================================
 
     const btnSimulation = document.getElementById('btn-view-simulation');

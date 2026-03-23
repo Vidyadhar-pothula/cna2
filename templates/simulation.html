@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORION | Intelligence Simulation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Simulation specific overrides if needed */
+        .phase-content {
+            display: none;
+            animation: fadeIn 0.6s ease forwards;
+        }
+        .phase-content.active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>ORION INTELLIGENCE SIMULATION</h1>
+        <div class="controls">
+            <button id="prevBtn" disabled>Previous Phase</button>
+            <div id="phaseIndicator">PHASE 1: INPUT CONFIGURATION</div>
+            <button id="nextBtn">Next Phase</button>
+        </div>
+        <a href="/">Back to Dashboard</a>
+    </header>
+
+    <div class="container">
+
+        <!-- PHASE 1: INPUT -->
+        <div class="phase-content active" id="phase-1">
+            <h2>Input Configuration</h2>
+            <p class="phase-desc">Upload core narrative documents and authority symbol lists for cross-correlation.</p>
+            <div class="input-controls">
+                <div class="input-group">
+                    <label>Control Narrative PDF</label>
+                    <input type="file" id="sim-pdf" accept=".pdf">
+                </div>
+                <div class="input-group">
+                    <label>Authority Symbol List (.txt)</label>
+                    <textarea id="sim-symbols" placeholder="List symbols here..."></textarea>
+                </div>
+                <button class="btn-primary" id="simStartBtn">Initialize Simulation</button>
+            </div>
+        </div>
+
+        <!-- PHASE 2: NER -->
+        <div class="phase-content" id="phase-2">
+            <h2>Semantic Entity Extraction</h2>
+            <p class="phase-desc">Named Entity Recognition (NER) identifies equipment, variables, and constraints.</p>
+            <div id="ner-output" class="code-viewer-container" style="min-height:200px; padding:20px; color:var(--white-70);">
+                Waiting for initialization...
+            </div>
+        </div>
+
+        <!-- PHASE 3: TALLY -->
+        <div class="phase-content" id="phase-3">
+            <h2>Constraint Tally board</h2>
+            <p class="phase-desc">Mapping extracted semantic entities to defined authority symbols.</p>
+            <div id="tally-board" class="entity-table-container">
+                <!-- Tally items injected by JS -->
+            </div>
+        </div>
+
+        <!-- PHASE 4: LOGIC -->
+        <div class="phase-content" id="phase-4">
+            <h2>Logic Translation</h2>
+            <p class="phase-desc">Agentic synthesis of control expressions based on tallied constraints.</p>
+            <div id="logic-output" class="final-output">
+                <!-- Logic content -->
+            </div>
+        </div>
+
+        <!-- PHASE 5: VALIDATION -->
+        <div class="phase-content" id="phase-5">
+            <h2>Agentic Validation</h2>
+            <p class="phase-desc">Syntactic and logical verification of generated expressions.</p>
+            <div id="validation-output" class="entity-table-container">
+                <!-- Validation checks -->
+            </div>
+        </div>
+
+        <!-- PHASE 6: UNIFIED -->
+        <div class="phase-content" id="phase-6">
+            <h2>Unified Control Table</h2>
+            <p class="phase-desc">Final correlation matrix of Equipment, Variables, and Control Actions.</p>
+            <div id="unified-matrix-container" class="table-container">
+                <table id="unified-matrix-table">
+                    <thead>
+                        <tr>
+                            <th>Equipment</th>
+                            <th>Variable</th>
+                            <th>Logic</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="unified-matrix-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- We can reuse script.js if we add simulation logic there, or use a separate file.
+         For simplicity, I'll add the 6-phase logic to the end of script.js or just in a script tag here.
+         Let's put the 6-phase logic in a separate file static/simulation.js to keep script.js clean.
+    -->
+    <script src="{{ url_for('static', filename='simulation.js') }}"></script>
+</body>
+
+</html>
