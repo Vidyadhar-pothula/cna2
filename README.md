@@ -23,29 +23,24 @@ ORION is a high-performance, local-first agentic AI platform designed to transfo
 
 ---
 
-## 🧠 The Agentic AI Pipeline (5-Phase Sequential)
+## 🧠 The Agentic AI Pipeline (3 Core Semantic Roles)
 
-Unlike traditional RAG or parallel extraction methods, ORION uses a **strictly sequential semantic chain** to maintain deep context and prevent data loss across document boundaries.
+Unlike traditional parallel extractors, ORION uses a **strictly sequential semantic chain** where 3 distinct "AI Roles" work in harmony to maintain deep technical context.
 
-### **1. Document Structure Agent**
-- **Role:** Semantically segments the document into logical 'Equipment Contexts'.
-- **Logic:** Identifies where one PID loop ends and another begins based on semantic headers rather than fixed regex patterns.
+### **1. The Architect (Structure & Segmentation)**
+- **Agent:** `DocumentStructureAgent`
+- **Role:** Semantically segments the raw document into logical 'Equipment Contexts'.
+- **Logic:** Identifies where one PID loop ends and another begins based on semantic headers rather than fixed regex patterns, defining the global context for the following agents.
 
-### **2. Semantic Entity Extraction Agent**
-- **Role:** Extracts core technical tokens: **Equipment, Variables, Parameters, Conditions, and Actions**.
-- **Logic:** USes zero-shot prompting to identify entities in situ, ensuring that every condition is tied to its specific technical variable.
+### **2. The Extraction Specialist (Entities & Logic)**
+- **Agents:** `SemanticEntityExtractionAgent` & `ControlLogicExtractionAgent`
+- **Role:** Extracts technical tokens (Equipment, Variables, Conditions, Actions) and maps their causal relationships.
+- **Logic:** This specialist performs a dual-pass extraction on each section identified by the Architect, ensuring that every control rule is tied to a verified technical variable found in situ.
 
-### **3. Control Logic Extraction Agent**
-- **Role:** Maps the relationship between conditions and actions.
-- **Logic:** Deduces the causal "Rules" that drive the control behavior (e.g., *IF X THEN Y*).
-
-### **4. Semantic Logic Synthesis Agent**
-- **Role:** Correlates extracted entities with logic rules into a unified tabular structure.
-- **Logic:** Resolves naming inconsistencies and ensures cross-referential integrity between different document sections.
-
-### **5. Pseudocode Generation Agent**
-- **Role:** Generates human-readable PLC logic and IEC 61131-3 Structured Text.
-- **Logic:** Converts textual logic into symbolic math expressions (e.g., `PV > HighLimit`) for deterministic industrial execution.
+### **3. The Systems Integrator (Synthesis & Generation)**
+- **Agents:** `SemanticLogicSynthesisAgent` & `PseudocodeGenerationAgent`
+- **Role:** Correlates extracted data into a unified logic table and generates the final code.
+- **Logic:** Resolves naming inconsistencies, performs semantic cross-checks, and converts text-based logic into symbolic math expressions and **IEC 61131-3 Structured Text**.
 
 ---
 
@@ -58,16 +53,15 @@ ORION balances server responsiveness with processing intensity through a hybrid 
 
 ---
 
-## 🚀 The 4-Stage Industrial Journey
+## 🚀 The 3-Stage Industrial Journey
 
-The end-to-end processing flow is visualized as a 4-node journey on the ORION dashboard:
+The end-to-end processing flow is visualized as a 3-node journey on the ORION dashboard, mapping directly to our core AI roles:
 
-| Stage | Activity | Output |
+| Stage | Role | Output |
 | :--- | :--- | :--- |
-| **Stage 1** | **Ingestion** | Document segmentation and text-layer preparation. |
-| **Stage 2** | **Extraction** | 5-category entity discovery via Semantic Agents. |
-| **Stage 3** | **Synthesis** | Unified Control Table generation and logic correlation. |
-| **Stage 4** | **Generation** | Final PLC Pseudocode and Structured Text export. |
+| **Stage 1** | **The Architect** | Document segmentation and equipment context mapping. |
+| **Stage 2** | **The Specialist** | Semantic extraction of Entities (Eqp/Var) and Logic Rules. |
+| **Stage 3** | **The Integrator** | Unified Control Table synthesis and IEC 61131-3 code export. |
 
 ---
 
