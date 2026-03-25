@@ -1,72 +1,53 @@
 # ⏻ ORION | Control Narrative Intelligence
 
-ORION is a high-performance, local-first agentic AI platform designed to transform industrial **Control Narrative** documents into structured engineering insights. It leverages a sophisticated multi-agent pipeline to extract technical entities, map complex control logic, and generate deterministic **IEC 61131-3 Structured Text (ST)**.
+ORION is a specialized platform that reads industrial **Control Narrative** PDFs and automatically turns them into structured data and ready-to-use **PLC Code** (Structured Text).
 
 ---
 
-## 🛠️ Technology Stack
-
-### **Backend (The Engine)**
-- **Framework:** Flask (Python 3.9+)
-- **AI Orchestration:** Pure Sequential Semantic Pipeline (Custom Architecture)
-- **Local LLM Hosting:** [Ollama](https://ollama.com/)
-- **PDF Processing:** `pdfminer.six` (Semantic extraction) & `split_pdf` (Page isolation)
-
-### **Frontend (Refined Industrial UI)**
-- **Styling:** Custom Vanilla CSS3 (Glassmorphism, Neon-Industrial Aesthetic)
-- **Typography:** `DM Sans` (Geometric Sans-Serif) & `Fira Code` (Monospaced Logic)
-- **Animations:** CSS-only keyframe sequences for non-blocking UI performance.
-
-### **AI Models**
-- **Primary Model:** `qwen2.5:14b` (High-precision reasoning for technical extraction)
-- **Fallback Model:** `llama3.1:8b` (Lightweight fallback for resilient processing)
+## 🛠️ The Tech Stack
+- **Backend:** Python Flask
+- **AI Brain:** Local Ollama (running the **Qwen 2.5 14B** model)
+- **Frontend:** Modern "Refined Industrial" UI using **DM Sans** typography
+- **Privacy:** Every analysis happens 100% locally on your machine.
 
 ---
 
-## 🧠 The Agentic AI Pipeline (3 Core Semantic Roles)
+## ⚙️ How it Works: The 5 Processing Stages
 
-Unlike traditional parallel extractors, ORION uses a **strictly sequential semantic chain** where 3 distinct "AI Roles" work in harmony to maintain deep technical context.
+ORION processes your documents in five clear, simple stages:
 
-### **1. The Architect (Structure & Segmentation)**
-- **Agent:** `DocumentStructureAgent`
-- **Role:** Semantically segments the raw document into logical 'Equipment Contexts'.
-- **Logic:** Identifies where one PID loop ends and another begins based on semantic headers rather than fixed regex patterns, defining the global context for the following agents.
+### **Stage 1: PDF Ingestion & Reading**
+The system first "reads" the PDF, extracting every character and identifying the major sections (like "Tank Control" or "Emergency Shutdown"). 
 
-### **2. The Extraction Specialist (Entities & Logic)**
-- **Agents:** `SemanticEntityExtractionAgent` & `ControlLogicExtractionAgent`
-- **Role:** Extracts technical tokens (Equipment, Variables, Conditions, Actions) and maps their causal relationships.
-- **Logic:** This specialist performs a dual-pass extraction on each section identified by the Architect, ensuring that every control rule is tied to a verified technical variable found in situ.
+### **Stage 2: 3-Agent Parallel Extraction**
+To ensure speed and accuracy, ORION launches **3 Parallel Agentic AI Workers**. These agents scan the text simultaneously to find raw information:
+- **Agent A:** Looks for physical Equipment.
+- **Agent B:** Identifies Process Variables and Setpoints (Parameters).
+- **Agent C:** Detects specific Conditions and required Actions.
 
-### **3. The Systems Integrator (Synthesis & Generation)**
-- **Agents:** `SemanticLogicSynthesisAgent` & `PseudocodeGenerationAgent`
-- **Role:** Correlates extracted data into a unified logic table and generates the final code.
-- **Logic:** Resolves naming inconsistencies, performs semantic cross-checks, and converts text-based logic into symbolic math expressions and **IEC 61131-3 Structured Text**.
+### **Stage 3: The 5-Table Generation**
+The raw data from the agents is cleaned up and organized into **5 Structured Research Tables**:
+1. **Equipment Table** (List of all hardware found)
+2. **Variables Table** (List of all live sensors/signals)
+3. **Parameters Table** (List of all setpoints/thresholds)
+4. **Conditions Table** (Specific logic states identified)
+5. **Actions Table** (Specific commands to be sent)
 
----
+### **Stage 4: Single Table Unification (The Logic Map)**
+The system then "stitches" all 5 tables together into a single **Unified Control Table**. This maps precisely which *Condition* on a specific *Variable* triggers which *Action* for a specific piece of *Equipment*.
 
-## 🧵 Concurrency & Threading Model
-
-ORION balances server responsiveness with processing intensity through a hybrid threading strategy:
-
-1.  **Background Document Processing:** When a file is uploaded, `app.py` spawns a dedicated `threading.Thread` to handle the heavy AI pipeline. This allows the Flask server to remain responsive, returning a `job_id` immediately so the frontend can poll for progress.
-2.  **Sequential AI Execution:** Inside the background thread, the LLM calls are executed **sequentially**. This is a deliberate design choice: parallel LLM calls for a single document often lead to "context drift" and duplication. By moving sequentially, each agent builds upon the verified output of the previous one.
-
----
-
-## 🚀 The 3-Stage Industrial Journey
-
-The end-to-end processing flow is visualized as a 3-node journey on the ORION dashboard, mapping directly to our core AI roles:
-
-| Stage | Role | Output |
-| :--- | :--- | :--- |
-| **Stage 1** | **The Architect** | Document segmentation and equipment context mapping. |
-| **Stage 2** | **The Specialist** | Semantic extraction of Entities (Eqp/Var) and Logic Rules. |
-| **Stage 3** | **The Integrator** | Unified Control Table synthesis and IEC 61131-3 code export. |
+### **Stage 5: Final Pseudocode & Code Generation**
+Finally, the "Integrator" role takes the Unified Table and writes **IEC 61131-3 Structured Text**. This is the actual code used in industrial PLCs to run the plant logic.
 
 ---
 
-## 🛡️ Identity & Security
-- **Local Processing:** All AI reasoning is performed on-device via Ollama. No document data leaves your local environment.
-- **Deterministic Guardrails:** The final ST code is verified by a deterministic Python parser to ensure logical consistency before display.
+## 👥 Core AI Roles
+
+Instead of complex AI names, think of ORION as a team of 3 specialists:
+1. **The Reader:** Handles Stage 1 (Getting the text ready).
+2. **The Specialist Finder:** Handles Stage 2 & 3 (Running parallel searches for the 5 data types).
+3. **The Logic Builder:** Handles Stage 4 & 5 (Connecting the dots and writing the final code).
+
+---
 
 Produced by **Vidyadhar Pothula** | *Standardizing Engineering Intelligence.*

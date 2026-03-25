@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ORION | Control Narrative Intelligence</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -104,17 +104,13 @@
                     </div>
                     <div class="status-item done" id="s2">
                         <span class="status-dot"></span>
-                        <span>Layout analysis via LayoutLMv3</span>
+                        <span>Named Entity Recognition (NER)</span>
                     </div>
                     <div class="status-item done" id="s3">
                         <span class="status-dot"></span>
-                        <span>Named Entity Recognition (NER)</span>
-                    </div>
-                    <div class="status-item done" id="s4">
-                        <span class="status-dot"></span>
                         <span>Constraint tally &amp; KG enforcement</span>
                     </div>
-                    <div class="status-item done" id="s5">
+                    <div class="status-item done" id="s4">
                         <span class="status-dot"></span>
                         <span>Logic translation &amp; validation</span>
                     </div>
@@ -236,10 +232,7 @@
             </div>
 
         </section>
-
     </div>
-
-
 
     <!-- ============================================================
          ORION AI CHATBOT SIDEBAR
@@ -319,7 +312,8 @@
         </div>
         <div class="toast-body" id="toastBody"></div>
     </div>
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
-</body>
 
+
+    <script src="script.js"></script>
+</body>
 </html>
