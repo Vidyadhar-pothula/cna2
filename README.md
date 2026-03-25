@@ -1,62 +1,72 @@
 # ⏻ ORION | Control Narrative Intelligence
+*System Architecture & Workflow Documentation*
 
-ORION is a specialized platform that reads industrial **Control Narrative** PDFs and automatically turns them into structured data and ready-to-use **PLC Code** (Structured Text).
-
----
-
-## 🛠️ The Tech Stack
-- **Backend:** Python Flask
-- **AI Brain:** Local Ollama (running the **Qwen 2.5 14B** model)
-- **Frontend:** Modern "Refined Industrial" UI using **DM Sans** typography
-- **Privacy:** Every analysis happens 100% locally on your machine.
+ORION is a specialized AI platform designed to transform industrial **Control Narrative** PDFs into structured engineering data and **IEC 61131-3 Structured Text**. This document outlines the technical architecture for use in system diagramming.
 
 ---
 
-## ⚙️ How it Works: The 5 Processing Stages
+## 🏗️ Technical Architecture (Local-First Design)
 
-ORION processes your documents in five clear, simple stages:
+ORION is built as an entirely self-contained, air-gapped system. All AI reasoning is performed on local hardware to ensure zero data egress and high-fidelity technical processing.
 
-### **Stage 1: PDF Ingestion & Reading**
-The system first "reads" the PDF, extracting every character and identifying the major sections (like "Tank Control" or "Emergency Shutdown"). 
-
-### **Stage 2: 3-Agent Parallel Extraction**
-To ensure speed and accuracy, ORION launches **3 Parallel Agentic AI Workers**. These agents scan the text simultaneously to find raw information:
-- **Agent A:** Looks for physical Equipment.
-- **Agent B:** Identifies Process Variables and Setpoints (Parameters).
-- **Agent C:** Detects specific Conditions and required Actions.
-
-### **Stage 3: The 5-Table Generation**
-The raw data from the agents is cleaned up and organized into **5 Structured Research Tables**:
-1. **Equipment Table** (List of all hardware found)
-2. **Variables Table** (List of all live sensors/signals)
-3. **Parameters Table** (List of all setpoints/thresholds)
-4. **Conditions Table** (Specific logic states identified)
-5. **Actions Table** (Specific commands to be sent)
-
-### **Stage 4: Single Table Unification (The Logic Map)**
-The system then "stitches" all 5 tables together into a single **Unified Control Table**. This maps precisely which *Condition* on a specific *Variable* triggers which *Action* for a specific piece of *Equipment*.
-
-### **Stage 5: Final Pseudocode & Code Generation**
-Finally, the "Integrator" role takes the Unified Table and writes **IEC 61131-3 Structured Text**. This is the actual code used in industrial PLCs to run the plant logic.
+### **1. The Tech Stack**
+- **Inference Engine:** [Ollama](https://ollama.com/) (Local server)
+- **Primary AI Model:** **Qwen 2.5 14B** (Optimized for logical reasoning and industrial syntax)
+- **Fallback AI Model:** **Llama 3.1 8B** (For redundant verification)
+- **Backend Infrastructure:** Python 3.9+ (Flask) and **LangChain** (for agentic orchestration)
+- **Front-end Design:** "Refined Industrial" system using **DM Sans** and a geometric glassmorphism aesthetic.
 
 ---
 
-## 💬 The "Ask AI" Chatbot (ORION AI)
+## ⚙️ The 5-Stage Sequential Pipeline
 
-The **Ask AI** button opens a secondary intelligence layer that lets you talk directly to your document.
+The document journey follows a **Strictly Sequential Semantic Chain**. This ensures that context builds cumulatively, preventing the data loss common in parallel processing.
 
-- **Model Used:** Local **Qwen 2.5 14B** (High-precision reasoning).
-- **Context Injection:** When you run an analysis, the chatbot automatically "reads" the 5 Extraction Tables. You can ask it questions like *"Which pumps have hi-hi alarms?"* or *"Explain the interlock for Tank 1"*, and it will answer based on the document's specific data.
-- **Privacy:** Just like the main pipeline, all chat messages stay 100% on your local machine.
+### **Stage 1: Document Ingestion (The Architect Role)**
+- **Action:** Raw PDF text is ingested and passed to the `DocumentStructureAgent`.
+- **Purpose:** Segment the document into logical "Equipment Contexts" (e.g., Boiler, Tank, Pump Station).
+- **Architecture Node:** `Segmentation & Boundary Mapping`.
+
+### **Stage 2: Semantic Token Extraction (The Specialist Role)**
+- **Action:** A sequential scan is performed on every identified segment.
+- **Goal:** Identify **5 Key Technical Tokens**:
+  - **Equipment:** Physical hardware units.
+  - **Variables:** Live PV/Signal IDs.
+  - **Parameters:** SPs and Deadbands.
+  - **Conditions:** Operational triggers.
+  - **Actions:** Control responses.
+- **Architecture Node:** `Semantic Multi-Agent Extraction`.
+
+### **Stage 3: 5-Table Synchronization & Normalization**
+- **Action:** Raw tokens are semantically normalized by the `NormalizationEngine`.
+- **Purpose:** Resolve naming conflicts (e.g., "Pump-1" vs "P1") and ensure one-to-one mapping across the entire document.
+- **Architecture Node:** `Knowledge Graph Alignment`.
+
+### **Stage 4: Unified Control Table Synthesis**
+- **Action:** The `SemanticLogicSynthesisAgent` correlates Stage 2 tokens into a single **Unified Logic Map**.
+- **Purpose:** Directly map `CONDITION` + `VARIABLE` $\rightarrow$ `ACTION` within a specific `EQUIPMENT` context.
+- **Architecture Node:** `Logic Correlation & Mapping`.
+
+### **Stage 5: Deterministic Code Generation (The Builder Role)**
+- **Action:** The `PseudocodeGenerationAgent` converts the Logic Map into human-readable symbols and **IEC 61131-3 Structured Text**.
+- **Architecture Node:** `PLC Code Synthesis (ST Generator)`.
 
 ---
 
-## 👥 Core AI Roles
+## 💬 Secondary Intelligence Layer: ORION AI (Ask AI)
 
-Instead of complex AI names, think of ORION as a team of 3 specialists:
-1. **The Reader:** Handles Stage 1 (Getting the text ready).
-2. **The Specialist Finder:** Handles Stage 2 & 3 (Running parallel searches for the 5 data types).
-3. **The Logic Builder:** Handles Stage 4 & 5 (Connecting the dots and writing the final code).
+A dedicated context-aware chatbot integrated into the UI sidebar.
+- **Engine:** Qwen 2.5 14B.
+- **Capability:** Injects the current document's 5 Extraction Tables directly into the chat context. 
+- **Usage:** Engineers can query specific interlocks, setpoints, or summaries directly from the sidebar.
+
+---
+
+## 👥 Core System Personas
+For simplified architectural visualization:
+1. **The Reader:** Manages Stage 1 (PDF boundary mapping).
+2. **The Specialist Finder:** Manages Stage 2 & 3 (Detailed data discovery).
+3. **The Logic Builder:** Manages Stage 4 & 5 (Integration and code export).
 
 ---
 
