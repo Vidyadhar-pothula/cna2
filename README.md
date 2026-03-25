@@ -1,86 +1,78 @@
-# Control Narrative Analysis (ORION Server)
+# ⏻ ORION | Control Narrative Intelligence
 
-Welcome to the **Control Narrative Analysis** (ORION) project. This repository hosts a scalable, agentic AI pipeline designed to ingest industrial control narrative PDFs and automatically extract highly structured control logic (Equipment, Variables, Parameters, Conditions, Actions) and generate industry-standard **IEC 61131-3 Structured Text (ST)** code.
-
-## 🧠 AI Models & Agents Used
-
-The system employs a hybrid, multi-agent architecture to maximize accuracy and reliability for complex engineering documents.
-
-### 1. Primary AI (Local / Scalable)
-- **Model:** `phi3:mini` (managed via Ollama, configurable via `EXTRACTION_MODEL`).
-- **Role:** Handles the heavy lifting of pure text-based reasoning and logic extraction. Runs locally for privacy and cost-efficiency.
-
-### 2. Vision / Fallback AI (Cloud)
-- **Model:** `gemini-2.0-flash` (via Google Gemini API).
-- **Role:** Acts as the **Vision Fallback Agent**. If the system detects a scanned PDF (i.e., text extraction yields almost no characters), it automatically reroutes the document to Gemini's multimodal File API to perform visual OCR and entity extraction simultaneously.
-
-### 3. Spatial Extractor (Optional ML)
-- **Model:** `LayoutLMv3` (HuggingFace).
-- **Role:** Used for understanding complex structural layouts and bounding boxes in PDFs, aligning visual structures with text (when enabled).
+ORION is a high-performance, local-first agentic AI platform designed to transform industrial **Control Narrative** documents into structured engineering insights. It leverages a sophisticated multi-agent pipeline to extract technical entities, map complex control logic, and generate deterministic **IEC 61131-3 Structured Text (ST)**.
 
 ---
 
-## ⚙️ The Agentic Pipeline (Internal Flow)
+## 🛠️ Technology Stack
 
-When a document is uploaded, it is routed through the **Scalable Agentic Pipeline** (`PipelineManager`). Let's break down the 5 distinct phases of the internal flow:
+### **Backend (The Engine)**
+- **Framework:** Flask (Python 3.9+)
+- **AI Orchestration:** Pure Sequential Semantic Pipeline (Custom Architecture)
+- **Local LLM Hosting:** [Ollama](https://ollama.com/)
+- **PDF Processing:** `pdfminer.six` (Semantic extraction) & `split_pdf` (Page isolation)
 
-### Phase 1: Global Context Building 
-- **Agent:** `GlobalContextBuilder`
-- The entire raw text is ingested, and a **Summarization Agent** scans the document.
-- **Regex Augmentation:** It relies on strict regular expressions to reliably identify standard tag formats (e.g., `PT-101`) to ensure zero hallucinations for critical equipment IDs. The text is then chunked for parallel processing.
+### **Frontend (Refined Industrial UI)**
+- **Styling:** Custom Vanilla CSS3 (Glassmorphism, Neon-Industrial Aesthetic)
+- **Typography:** `DM Sans` (Geometric Sans-Serif) & `Fira Code` (Monospaced Logic)
+- **Animations:** CSS-only keyframe sequences for non-blocking UI performance.
 
-### Phase 2: Parallel Extraction Orchestration
-- **Agent:** `ParallelExtractionOrchestrator` -> spawns multiple `ExtractionAgent` instances.
-- **Flow:** The system spins up a thread pool (max 4 workers). Each chunk of text is analyzed simultaneously by an LLM agent prompted with a strict "Industrial Controls Engineer" persona.
-- **Action:** The agents extract 5 core categories simultaneously using a 1-shot prompted JSON schema:
-  1. Equipment
-  2. Variables
-  3. Parameters
-  4. Conditions
-  5. Actions
-
-### Phase 3: Normalization & Deduplication
-- **Engine:** `NormalizationEngine`
-- Because the extraction happens in parallel chunks, there may be overlaps or formatting quirks. This engine rigorously cleans up the JSON, enforces strict schemas, parses out missing IDs, and removes duplicate entities.
-
-### Phase 4: Semantic Matching & Stitching
-- **Engine:** `SemanticMatcher` & `UnifiedStitcher`
-- **Flow:** Takes the isolated arrays of conditions, actions, and equipment, and "stitches" them back together into a coherent logical table (`unified_control_table`). 
-- **Hybrid Guardrail:** It cross-references the LLM's output with the exact Regex matches from Phase 1. If the LLM failed to identify an equipment tag that Regex found, the system defensively injects the Regex tag back into the dataset to prevent data loss.
-
-### Phase 5: Implementation Code Generation
-- **Flow:** Converts the parsed logic into actual industrial code.
-- **Step A (LLM Logic Refinement):** The LLM is invoked again to compress human narrative strings (e.g., "when the pressure gets too high") into symbolic math expressions (e.g., `PT-101 > HighLimit`).
-- **Step B (Deterministic Formatting):** A pure Python deterministic parser takes these exact symbols and formats them strictly into **IEC 61131-3 Structured Text** so that it compiles perfectly in modern PLCs.
+### **AI Models**
+- **Primary Model:** `qwen2.5:14b` (High-precision reasoning for technical extraction)
+- **Fallback Model:** `llama3.1:8b` (Lightweight fallback for resilient processing)
 
 ---
 
-## 🚀 System Architectural Stages
+## 🧠 The Agentic AI Pipeline (5-Phase Sequential)
 
-To give a holistic view, the entire project happens across these distinct **Stages**:
+Unlike traditional RAG or parallel extraction methods, ORION uses a **strictly sequential semantic chain** to maintain deep context and prevent data loss across document boundaries.
 
-### **Stage 1: Ingestion & Preprocessing**
-- **Upload:** The PDF document is received via the Flask backend (`app.py`).
-- **Separation:** The `split_pdf.py` utility physically isolates text pages from image-heavy pages, creating two separate processing streams.
+### **1. Document Structure Agent**
+- **Role:** Semantically segments the document into logical 'Equipment Contexts'.
+- **Logic:** Identifies where one PID loop ends and another begins based on semantic headers rather than fixed regex patterns.
 
-### **Stage 2: Intelligent Routing (Triage)**
-- **Text Density Evaluation:** `tinyllama_service.py` checks exactly how many characters were extractable.
-- **Decision Matrix:**
-  - If text is rich -> **Route to Local Scalable AI** (`phi3:mini`).
-  - If text is almost zero (<10 chars) -> flagged as a scanned image -> **Route to Vision AI** (`gemini-2.0-flash` File API OCR).
+### **2. Semantic Entity Extraction Agent**
+- **Role:** Extracts core technical tokens: **Equipment, Variables, Parameters, Conditions, and Actions**.
+- **Logic:** USes zero-shot prompting to identify entities in situ, ensuring that every condition is tied to its specific technical variable.
 
-### **Stage 3: The Multi-Agent Extraction Pipeline**
-This is the core execution logic (handled by `PipelineManager.run_pipeline()`), which itself carries 4 sub-stages:
-1. **Context Building:** Scanning the global document and chunking into sections.
-2. **Parallel Extraction:** Generating thread pools of LLM agents acting simultaneously on the chunks to find Entities (Equipment, Actions, etc).
-3. **Normalization:** Cleaning and deduplicating data across agents into strict schemas.
-4. **Stitching:** Rebuilding logical conditions and actions into uniform tables, injecting Regex fallback safety nets.
+### **3. Control Logic Extraction Agent**
+- **Role:** Maps the relationship between conditions and actions.
+- **Logic:** Deduces the causal "Rules" that drive the control behavior (e.g., *IF X THEN Y*).
 
-### **Stage 4: Post-Processing & Code Generation**
-- **Logic Refinement:** The LLMs convert human narratives ("When High") into strict symbols (`> HighLimit`).
-- **Structured Text Generator:** A deterministic Python parser reads the symbols and converts them exactly into IEC 61131-3 syntax.
+### **4. Semantic Logic Synthesis Agent**
+- **Role:** Correlates extracted entities with logic rules into a unified tabular structure.
+- **Logic:** Resolves naming inconsistencies and ensures cross-referential integrity between different document sections.
 
-### **Stage 5: Delivery & UI Rendering**
-- **JSON Aggregation:** All tables and ST code are merged into a single structured schema payload.
-- **Asynchronous Delivery:** An asynchronous worker thread completes the job and flags the REST API.
-- **Frontend Hydration:** The HTML/JS client pulls the finalized payload and renders the interactive tables and code editor natively inside the browser (via `script.js` and `index.html`).
+### **5. Pseudocode Generation Agent**
+- **Role:** Generates human-readable PLC logic and IEC 61131-3 Structured Text.
+- **Logic:** Converts textual logic into symbolic math expressions (e.g., `PV > HighLimit`) for deterministic industrial execution.
+
+---
+
+## 🧵 Concurrency & Threading Model
+
+ORION balances server responsiveness with processing intensity through a hybrid threading strategy:
+
+1.  **Background Document Processing:** When a file is uploaded, `app.py` spawns a dedicated `threading.Thread` to handle the heavy AI pipeline. This allows the Flask server to remain responsive, returning a `job_id` immediately so the frontend can poll for progress.
+2.  **Sequential AI Execution:** Inside the background thread, the LLM calls are executed **sequentially**. This is a deliberate design choice: parallel LLM calls for a single document often lead to "context drift" and duplication. By moving sequentially, each agent builds upon the verified output of the previous one.
+
+---
+
+## 🚀 The 4-Stage Industrial Journey
+
+The end-to-end processing flow is visualized as a 4-node journey on the ORION dashboard:
+
+| Stage | Activity | Output |
+| :--- | :--- | :--- |
+| **Stage 1** | **Ingestion** | Document segmentation and text-layer preparation. |
+| **Stage 2** | **Extraction** | 5-category entity discovery via Semantic Agents. |
+| **Stage 3** | **Synthesis** | Unified Control Table generation and logic correlation. |
+| **Stage 4** | **Generation** | Final PLC Pseudocode and Structured Text export. |
+
+---
+
+## 🛡️ Identity & Security
+- **Local Processing:** All AI reasoning is performed on-device via Ollama. No document data leaves your local environment.
+- **Deterministic Guardrails:** The final ST code is verified by a deterministic Python parser to ensure logical consistency before display.
+
+Produced by **Vidyadhar Pothula** | *Standardizing Engineering Intelligence.*
