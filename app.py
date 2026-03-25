@@ -33,15 +33,7 @@ try:
 except ImportError as e:
     print(f"Warning: tinyllama_service import failed: {e}")
 
-# Try importing ML modules, warn if missing
-try:
-    from layoutlmv3_extractor import load_model, preprocess_document, run_inference, structure_output, LABELS_MAP
-    ML_AVAILABLE = True
-except ImportError as e:
-    print(f"Warning: ML module import failed: {e}")
-    ML_AVAILABLE = False
-
-# Check for poppler
+# Poppler check (required for pdf-to-image conversion)
 if shutil.which('pdftoppm') is None:
     print("WARNING: 'pdftoppm' (poppler) not found in PATH.")
 
@@ -57,24 +49,6 @@ os.makedirs(app.config['OUTPUT_FOLDER'], exist_ok=True)
 
 # Global Job Store
 JOBS: dict = {}
-MODEL_LOCK = threading.Lock()
-model = None
-processor = None
-
-def get_ml_model():
-    global model, processor, ML_AVAILABLE
-    if not ML_AVAILABLE: return None, None
-    with MODEL_LOCK:
-        if model is None:
-            print("[ML] Loading Model (Lazy)...")
-            try:
-                from layoutlmv3_extractor import load_model as lm_load
-                model, processor = lm_load()
-                print("[ML] Model Loaded!")
-            except Exception as e:
-                print(f"[ML] Failed to load: {e}")
-                ML_AVAILABLE = False
-        return model, processor
 
 # --- Normalization Helper ---
 def normalize_extraction_result(raw_result):
