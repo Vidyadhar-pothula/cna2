@@ -41,6 +41,16 @@ Finally, the "Integrator" role takes the Unified Table and writes **IEC 61131-3 
 
 ---
 
+## 💬 The "Ask AI" Chatbot (ORION AI)
+
+The **Ask AI** button opens a secondary intelligence layer that lets you talk directly to your document.
+
+- **Model Used:** Local **Qwen 2.5 14B** (High-precision reasoning).
+- **Context Injection:** When you run an analysis, the chatbot automatically "reads" the 5 Extraction Tables. You can ask it questions like *"Which pumps have hi-hi alarms?"* or *"Explain the interlock for Tank 1"*, and it will answer based on the document's specific data.
+- **Privacy:** Just like the main pipeline, all chat messages stay 100% on your local machine.
+
+---
+
 ## 👥 Core AI Roles
 
 Instead of complex AI names, think of ORION as a team of 3 specialists:
